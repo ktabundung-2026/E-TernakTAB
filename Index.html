@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Google Fonts & Tailwind -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: radial-gradient(circle at top right, #f0fdf4, #f3f4f6);
+    }
+    .hidden-custom { display: none; }
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .pulse-soft {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .6; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 antialiased">
+
+  <!-- SECTION 1: LOGIN & STATISTIK WRAPPER -->
+  <div id="loginSection" class="w-full max-w-md flex flex-col gap-5">
+    
+    <!-- BRANDING HEADER -->
+    <div class="text-center py-2">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-green-600 text-white text-2xl shadow-lg shadow-green-200 mb-3">
+        <i class="fa-solid fa-cow"></i>
+      </div>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Sistem E-Ternak v.1.2</h1>
+      <p class="text-xs text-gray-500 font-medium mt-1">Manajemen Data Ternak Wilayah Kecamatan Tabundung</p>
+      
+      <div class="inline-flex items-center gap-1.5 bg-gray-200/60 text-gray-700 text-[11px] font-semibold px-3 py-1 rounded-full mt-3 shadow-sm">
+        <i class="fa-solid fa-calendar-day text-green-600"></i>
+        <span id="tanggalHariIni">Memuat tanggal...</span>
+      </div>
+    </div>
+
+    <!-- STATISTIK CARD -->
+    <div class="glass-effect p-6 rounded-2xl shadow-xl border border-white/60 w-full transition-all duration-300">
+      <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-chart-simple text-green-600 text-base"></i> Ringkasan Populasi
+      </h3>
+      
+      <div id="statsLoading" class="text-center py-6 text-gray-400 text-sm font-medium">
+        <i class="fa-solid fa-circle-notch fa-spin text-green-500 text-lg mr-2"></i> Sinkronisasi database...
+      </div>
+      
+      <div id="statsGrid" class="hidden-custom space-y-4">
+        <div class="bg-gradient-to-br from-green-600 to-green-700 p-4 rounded-xl shadow-md shadow-green-100 flex items-center justify-between text-white">
+          <div>
+            <p class="text-xs font-semibold text-green-100 uppercase tracking-wide">Total Ternak Keluar</p>
+            <p class="text-3xl font-extrabold mt-1" id="statTotal">0</p>
+          </div>
+          <div class="bg-white/10 w-12 h-12 rounded-lg flex items-center justify-center text-xl"><i class="fa-solid fa-layer-group"></i></div>
+        </div>
+        
+        <div class="grid grid-cols-3 gap-2.5">
+          <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
+            <span class="inline-block px-2 py-0.5 text-[10px] font-bold text-yellow-600 bg-yellow-50 rounded-full mb-1">Kerbau</span>
+            <p class="text-xl font-bold text-gray-800 mt-1" id="statKerbau">0</p>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
+            <span class="inline-block px-2 py-0.5 text-[10px] font-bold text-blue-600 bg-blue-50 rounded-full mb-1">Sapi</span>
+            <p class="text-xl font-bold text-gray-800 mt-1" id="statSapi">0</p>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
+            <span class="inline-block px-2 py-0.5 text-[10px] font-bold text-red-600 bg-red-50 rounded-full mb-1">Kuda</span>
+            <p class="text-xl font-bold text-gray-800 mt-1" id="statKuda">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGIN CARD -->
+    <div class="glass-effect p-6 rounded-2xl shadow-xl border border-white/60 w-full">
+      <div class="mb-5">
+        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-2">Akses Keamanan</label>
+        <div class="relative flex items-center">
+          <i class="fa-solid fa-lock absolute left-3 text-gray-400 text-sm"></i>
+          <input type="password" id="appPassword" class="w-full bg-white/80 border border-gray-200 rounded-xl py-3 pl-9 pr-4 text-gray-800 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-500 transition-all duration-200 shadow-inner" placeholder="Masukkan Password Kontrol">
+        </div>
+      </div>
+      <p id="loginError" class="text-red-500 text-xs font-medium mb-4 flex items-center gap-1.5 hidden-custom">
+        <i class="fa-solid fa-circle-exclamation"></i> Password tidak sesuai!
+      </p>
+      <button onclick="loginAplikasi()" id="btnLogin" class="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-bold py-3 px-4 rounded-xl focus:outline-none shadow-lg shadow-gray-900/10 transition-all duration-200 active:scale-[0.98]">
+        Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- SECTION 2: FORM INPUT -->
+  <div id="formSection" class="glass-effect p-6 md:p-8 rounded-2xl shadow-2xl border border-white/80 w-full max-w-2xl hidden-custom transition-all duration-300">
+    
+    <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
+      <div>
+        <h2 class="text-lg font-extrabold text-gray-900 tracking-tight">Formulir Identitas Ternak</h2>
+        <p class="text-xs text-gray-500 font-medium">Input Pendataan Ternak Keluar</p>
+      </div>
+      <button onclick="logoutAplikasi()" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold py-1.5 px-3.5 rounded-xl text-xs transition duration-150 flex items-center gap-1">
+        <i class="fa-solid fa-right-from-bracket text-[10px]"></i> Kunci
+      </button>
+    </div>
+    
+    <form id="ternakForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Nomor KKMT (dengan Pengecekan Duplikat) -->
+        <div>
+          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Nomor KKMT</label>
+          <input type="text" id="nomorKkmt" required inputmode="numeric" pattern="[0-9]+" title="Hanya angka" onblur="verifikasiNomorKkmt()" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition shadow-inner">
+          <p id="kkmtError" class="text-red-500 text-[11px] font-semibold mt-1 hidden-custom">
+            <i class="fa-solid fa-triangle-exclamation"></i> Nomor KKMT ini sudah terdaftar!
+          </p>
+        </div>
+
+        <!-- Jenis Ternak -->
+        <div>
+          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Jenis Ternak</label>
+          <div class="relative">
+            <select id="jenisTernak" required class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition shadow-inner appearance-none">
+              <option value="">-- Pilih Jenis Ternak --</option>
+              <option value="Kerbau">Kerbau</option>
+              <option value="Sapi">Sapi</option>
+              <option value="Kuda">Kuda</option>
+            </select>
+            <i class="fa-solid fa-chevron-down absolute right-3.5 top-3.5 text-gray-400 text-xs pointer-events-none"></i>
+          </div>
+        </div>
+
+        <!-- Jenis Kelamin -->
+        <div>
+          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Jenis Kelamin Ternak</label>
+          <div class="relative">
+            <select id="jenisKelamin" required class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition shadow-inner appearance-none">
+              <option value="">-- Pilih Jenis Kelamin Ternak --</option>
+              <option value="Jantan">Jantan</option>
+              <option value="Betina">Betina</option>
+            </select>
+            <i class="fa-solid fa-chevron-down absolute right-3.5 top-3.5 text-gray-400 text-xs pointer-events-none"></i>
+          </div>
+        </div>
+
+        <!-- Nama Pemilik (Mendukung Huruf & Tanda Baca) -->
+        <div>
+          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Nama Pemilik Ternak</label>
+          <input type="text" id="namaPemilik" required pattern="[A-Za-z\s.,'&quot;-]+" title="Huruf dan tanda baca (titik, koma, petik, strip)" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition shadow-inner">
+        </div>
+
+        <!-- NIK Pemilik -->
+        <div>
+          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">NIK Pemilik Ternak</label>
+          <input type="text" id="nikPemilik" required inputmode="numeric" pattern="[0-9]+" title="Hanya angka" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition shadow-inner">
+        </div>
+
+        <!-- Asal Ternak -->
+        <div>
+          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Asal Ternak</label>
+          <select id="asalTernak" required class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition shadow-inner">
+            <option value="">-- Asal Ternak --</option>
+            <option value="Tarimbang">Tarimbang</option>
+            <option value="Banggawatu">Banggawatu</option>
+            <option value="Tapil">Tapil</option>
+            <option value="Kukitalu">Kukitalu</option>
+            <option value="Karita">Karita</option>
+            <option value="Waikanabu">Waikanabu</option>
+            <option value="Billa">Billa</option>
+            <option value="Wudipandak">Wudipandak</option>
+            <option value="Praing Kareha">Praing Kareha</option>
+            <option value="Pindu Hurani">Pindu Hurani</option>
+          </select>    
+        </div>
+
+        <!-- Nama Pengantar KKMT (Mendukung Huruf & Tanda Baca) -->
+        <div class="md:col-span-2">
+          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Nama Pengantar KKMT</label>
+          <input type="text" id="namaPengantar" required pattern="[A-Za-z\s.,'&quot;-]+" title="Huruf dan tanda baca (titik, koma, petik, strip)" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition shadow-inner">
+        </div>
+
+        <!-- Upload Foto/Dokumen -->
+        <div class="md:col-span-2 mt-2">
+          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-2">Upload Foto Ciri Ternak</label>
+          <div class="border-2 border-dashed border-gray-200 rounded-xl p-4 bg-white/50 text-center hover:bg-white transition-all">
+            <input type="file" id="fotoTernak" accept="image/jpeg, image/png, application/pdf" capture="environment" class="mx-auto block text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 file:cursor-pointer cursor-pointer">
+            <p class="text-[11px] text-gray-400 mt-2"><i class="fa-solid fa-camera mr-0.5"></i> Kamera HP otomatis aktif atau pilih format JPG, PNG, PDF</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tombol Simpan -->
+      <div class="flex items-center justify-end mt-6 border-t border-gray-100 pt-4">
+        <button type="submit" id="btnSubmit" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-3 px-8 rounded-xl focus:outline-none shadow-lg shadow-green-600/10 transition duration-200 active:scale-[0.98] flex items-center justify-center gap-2">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Ternak
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    let isKkmtDuplicate = false;
+
+    window.onload = function() { 
+      tampilkanTanggalTerkini();
+      loadStats(); 
+    };
+
+    function tampilkanTanggalTerkini() {
+      const opsi = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const tanggal = new Date().toLocaleDateString('id-ID', opsi);
+      document.getElementById('tanggalHariIni').innerText = tanggal;
+    }
+
+    function loadStats() {
+      document.getElementById('statsLoading').classList.remove('hidden-custom');
+      document.getElementById('statsGrid').classList.add('hidden-custom');
+      google.script.run
+        .withSuccessHandler(function(stats) {
+          if (stats) {
+            document.getElementById('statTotal').innerText = stats.total || 0;
+            document.getElementById('statKerbau').innerText = stats.kerbau || 0;
+            document.getElementById('statSapi').innerText = stats.sapi || 0;
+            document.getElementById('statKuda').innerText = stats.kuda || 0;
+            document.getElementById('statsLoading').classList.add('hidden-custom');
+            document.getElementById('statsGrid').classList.remove('hidden-custom');
+          }
+        })
+        .getLivestockStats();
+    }
+
+    // Fungsi Verifikasi Duplikat KKMT saat input kehilangan fokus (onblur)
+    function verifikasiNomorKkmt() {
+      const kkmtInput = document.getElementById('nomorKkmt').value.trim();
+      const errEl = document.getElementById('kkmtError');
+      
+      if (!kkmtInput) {
+        errEl.classList.add('hidden-custom');
+        isKkmtDuplicate = false;
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(isExist) {
+          if (isExist) {
+            errEl.classList.remove('hidden-custom');
+            isKkmtDuplicate = true;
+          } else {
+            errEl.classList.add('hidden-custom');
+            isKkmtDuplicate = false;
+          }
+        })
+        .cekKkmtAda(kkmtInput);
+    }
+
+    function loginAplikasi() {
+      const password = document.getElementById('appPassword').value;
+      const btn = document.getElementById('btnLogin');
+      const errEl = document.getElementById('loginError');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Memverifikasi...';
+      errEl.classList.add('hidden-custom');
+
+      google.script.run
+        .withSuccessHandler(function(isValid) {
+          if(isValid) {
+            document.getElementById('loginSection').classList.add('hidden-custom');
+            document.getElementById('formSection').classList.remove('hidden-custom');
+          } else {
+            errEl.classList.remove('hidden-custom');
+            btn.disabled = false;
+            btn.innerHTML = 'Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>';
+          }
+        })
+        .periksaPassword(password);
+    }
+
+    function logoutAplikasi() {
+      document.getElementById('appPassword').value = "";
+      document.getElementById('loginSection').classList.remove('hidden-custom');
+      document.getElementById('formSection').classList.add('hidden-custom');
+      const btn = document.getElementById('btnLogin');
+      btn.disabled = false;
+      btn.innerHTML = 'Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>';
+      loadStats();
+    }
+
+    function handleFormSubmit(event) {
+      event.preventDefault();
+      
+      if (isKkmtDuplicate) {
+        alert("Nomor KKMT sudah pernah terdaftar! Silakan gunakan Nomor KKMT yang lain.");
+        return;
+      }
+
+      const btn = document.getElementById('btnSubmit');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Memproses Data...';
+
+      const fileInput = document.getElementById('fotoTernak');
+      const file = fileInput.files[0];
+      const formData = {
+        nomorKkmt: document.getElementById('nomorKkmt').value,
+        jenisTernak: document.getElementById('jenisTernak').value,
+        jenisKelamin: document.getElementById('jenisKelamin').value,
+        namaPemilik: document.getElementById('namaPemilik').value,
+        nikPemilik: document.getElementById('nikPemilik').value,
+        asalTernak: document.getElementById('asalTernak').value,
+        namaPengantar: document.getElementById('namaPengantar').value
+      };
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const fileData = { base64: e.target.result, type: file.type };
+          kirimKeAppsScript(formData, fileData);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        kirimKeAppsScript(formData, null);
+      }
+    }
+
+    function kirimKeAppsScript(formData, fileData) {
+      google.script.run
+        .withSuccessHandler(function(response) {
+          alert(response.message);
+          if(response.status === "SUKSES") {
+            document.getElementById('ternakForm').reset();
+            document.getElementById('kkmtError').classList.add('hidden-custom');
+            isKkmtDuplicate = false;
+            loadStats();
+          }
+          const btn = document.getElementById('btnSubmit');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Ternak';
+        })
+        .simpanDataTernak(formData, fileData);
+    }
+  </script>
+</body>
+</html>
