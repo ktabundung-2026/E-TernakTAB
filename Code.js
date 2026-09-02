@@ -22,20 +22,53 @@ function periksaPassword(inputPassword) {
   return inputPassword === PASSWORD_AKSES;
 }
 
-// FUNGSI BARU: Cek apakah Nomor KKMT sudah pernah terdaftar
-function cekKkmtAda(nomorKkmt) {
+// OPTIMALISASI: Tarik seluruh data tabel 1x saja untuk statistik & cek duplikasi
+function getAplikasiData() {
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     var lastRow = sheet.getLastRow();
-    if (lastRow <= 1) return false;
+    
+    if (lastRow <= 1) {
+      return { stats: { total: 0, kerbau: 0, sapi: 0, kuda: 0 }, values: [] };
+    }
+    
+    // Tarik semua data dari kolom A sampai I sekaligus dalam 1 perintah (Sangat Cepat)
+    var range = sheet.getRange(2, 1, lastRow - 1, 9);
+    var values = range.getValues();
+    
+    var kerbau = 0, sapi = 0, kuda = 0;
+    
+    for (var i = 0; i < values.length; i++) {
+      var row = values[i];
+      var jenis = row[2] ? row[2].toString().trim().toLowerCase() : "";
+      
+      if (jenis === "kerbau") kerbau++;
+      else if (jenis === "sapi") sapi++;
+      else if (jenis === "kuda") kuda++;
+    }
+    
+    return {
+      stats: { total: values.length, kerbau: kerbau, sapi: sapi, kuda: kuda },
+      values: values
+    };
+  } catch (error) {
+    return { stats: { total: 0, kerbau: 0, sapi: 0, kuda: 0 }, values: [] };
+  }
+}
 
-    var dataKkmt = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
+// Fungsi Cek Duplikasi menggunakan data memori (Tanpa buka Sheet berulang)
+function cekKkmtAda(nomorKkmt) {
+  try {
+    var dataApp = getAplikasiData();
+    var values = dataApp.values;
+    if (values.length === 0) return false;
+    
     var targetKkmt = nomorKkmt.toString().trim();
 
-    for (var i = 0; i < dataKkmt.length; i++) {
-      var val = dataKkmt[i][0] ? dataKkmt[i][0].toString().replace("'", "").trim() : "";
+    for (var i = 0; i < values.length; i++) {
+      var val = values[i][1] ? values[i][1].toString().replace("'", "").trim() : "";
       if (val === targetKkmt) {
-        return true; // Ditemukan nomor KKMT yang sama
+        return true; 
       }
     }
     return false;
@@ -44,45 +77,15 @@ function cekKkmtAda(nomorKkmt) {
   }
 }
 
+// Mengambil statistik secara cepat dari helper
 function getLivestockStats() {
-  try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    var lastRow = sheet.getLastRow();
-    
-    if (lastRow <= 1) {
-      return { total: 0, kerbau: 0, sapi: 0, kuda: 0 };
-    }
-    
-    var data = sheet.getRange(2, 3, lastRow - 1, 1).getValues();
-    var total = data.length;
-    var kerbau = 0, sapi = 0, kuda = 0;
-    
-    for (var i = 0; i < total; i++) {
-      var val = data[i][0];
-      if (!val) continue;
-      var jenis = val.toString().trim().toLowerCase();
-      if (jenis === "kerbau") kerbau++;
-      else if (jenis === "sapi") sapi++;
-      else if (jenis === "kuda") kuda++;
-    }
-    
-    return { total: total, kerbau: kerbau, sapi: sapi, kuda: kuda };
-  } catch (error) {
-    return { total: 0, kerbau: 0, sapi: 0, kuda: 0 };
-  }
+  return getAplikasiData().stats;
 }
 
 function getDaftarTernak() {
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    var lastRow = sheet.getLastRow();
-    
-    if (lastRow <= 1) {
-      return [];
-    }
-    
-    var range = sheet.getRange(2, 1, lastRow - 1, 9);
-    var values = range.getValues();
+    var dataApp = getAplikasiData();
+    var values = dataApp.values;
     var result = [];
     
     for (var i = values.length - 1; i >= 0; i--) {
@@ -115,12 +118,11 @@ function getDaftarTernak() {
   }
 }
 
-// Fungsi Simpan Data Baru dengan Proteksi Duplikasi
+// Fungsi Simpan Data Baru
 function simpanDataTernak(data, fileData) {
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     
-    // Proteksi Sisi Server: Cegah KKMT Duplikat
     if (cekKkmtAda(data.nomorKkmt)) {
       return { status: "DUPLIKAT", message: "Gagal menyimpan! Nomor KKMT '" + data.nomorKkmt + "' sudah terdaftar di sistem." };
     }
