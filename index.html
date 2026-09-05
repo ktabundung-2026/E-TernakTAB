@@ -352,13 +352,13 @@
       
       // Kumpulkan data form (pastikan nama key objek di bawah ini sama persis dengan nama kolom di tabel Supabase Anda)
       const payload = {
-        nomor_kkmt: document.getElementById('nomorKkmt').value,
-        jenis_ternak: document.getElementById('jenisTernak').value,
-        jenis_kelamin: document.getElementById('jenisKelamin').value,
-        nama_pemilik: document.getElementById('namaPemilik').value,
-        nik_pemilik: document.getElementById('nikPemilik').value,
-        asal_ternak: document.getElementById('asalTernak').value,
-        nama_pengantar: document.getElementById('namaPengantar').value
+        nomor_kkmt: document.getElementById('No_KKMT').value,
+        jenis_ternak: document.getElementById('Jenis_Ternak').value,
+        jenis_kelamin: document.getElementById('Jenis_Kelamin').value,
+        nama_pemilik: document.getElementById('Nama_Pemilik').value,
+        nik_pemilik: document.getElementById('NIK_Pemilik').value,
+        asal_ternak: document.getElementById('Asal_Ternak').value,
+        nama_pengantar: document.getElementById('Nama_Pengantar').value
       };
 
       try {
@@ -366,7 +366,7 @@
         if (file) {
           const fileName = `${Date.now()}_${file.name}`;
           const { data: uploadData, error: uploadError } = await _supabase.storage
-            .from('bucket_ternak') // Ganti dengan nama Bucket Storage di Supabase Anda jika menggunakan fitur foto
+            .from('Folder_Foto') // Ganti dengan nama Bucket Storage di Supabase Anda jika menggunakan fitur foto
             .upload(fileName, file);
 
           if (!uploadError && uploadData) {
