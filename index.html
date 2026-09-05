@@ -244,7 +244,7 @@
       document.getElementById('statsGrid').classList.add('hidden-custom');
 
       try {
-        const { data, error } = await _supabase.from(TABLE_NAME).select('jenis_ternak');
+        const { data, error } = await _supabase.from(TABLE_NAME).select('Jenis_Ternak');
         
         if (error) throw error;
 
