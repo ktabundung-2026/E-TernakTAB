@@ -253,15 +253,15 @@
 
         data.forEach(item => {
           let jenis = (item.Jenis_Ternak || "").toLowerCase();
-          if (jenis.includes('Kerbau')) kerbau++;
-          else if (jenis.includes('Sapi')) sapi++;
-          else if (jenis.includes('Kuda')) kuda++;
+          if (jenis.includes('Kerbau')) Kerbau++;
+          else if (jenis.includes('Sapi')) Sapi++;
+          else if (jenis.includes('Kuda')) Kuda++;
         });
 
         document.getElementById('statTotal').innerText = total;
-        document.getElementById('statKerbau').innerText = Kerbau;
-        document.getElementById('statSapi').innerText = Sapi;
-        document.getElementById('statKuda').innerText = Kuda;
+        document.getElementById('statKerbau').innerText = kerbau;
+        document.getElementById('statSapi').innerText = sapi;
+        document.getElementById('statKuda').innerText = kuda;
 
         document.getElementById('statsLoading').classList.add('hidden-custom');
         document.getElementById('statsGrid').classList.remove('hidden-custom');
