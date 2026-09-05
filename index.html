@@ -338,12 +338,12 @@
       loadStats();
     }
 
-    // Submit Data Form ke Supabase
+    // Submit Data Form ke Supabase dengan Custom Modal
     async function handleFormSubmit(event) {
       event.preventDefault();
       
       if (isKkmtDuplicate) {
-        alert("Nomor KKMT sudah pernah terdaftar! Silakan gunakan Nomor KKMT yang lain.");
+        tampilkanModal("Nomor KKMT sudah pernah terdaftar! Silakan gunakan Nomor KKMT yang lain.", "error");
         return;
       }
 
@@ -354,7 +354,6 @@
       const fileInput = document.getElementById('fotoTernak');
       const file = fileInput.files[0];
       
-      // Kumpulkan data sesuai nama kolom persis di database Anda
       const payload = {
         No_KKMT: document.getElementById('nomorKkmt').value,
         Jenis_Ternak: document.getElementById('jenisTernak').value,
@@ -366,7 +365,6 @@
       };
 
       try {
-        // Jika ada file foto/dokumen yang di-upload
         if (file) {
           const fileName = `${Date.now()}_${file.name}`;
           
@@ -381,19 +379,17 @@
               .from('Folder_Foto')
               .getPublicUrl(fileName);
               
-            // Masukkan link foto ke kolom Link_FotoKKMT sesuai database
             payload.Link_FotoKKMT = publicUrlData.publicUrl;
           }
         }
 
-        // Insert data ke tabel database Supabase
         const { error: insertError } = await _supabase
           .from(TABLE_NAME)
           .insert([payload]);
 
         if (insertError) throw insertError;
 
-        alert("Data Ternak berhasil disimpan!");
+        tampilkanModal("Data Ternak berhasil disimpan!", "sukses");
         document.getElementById('ternakForm').reset();
         document.getElementById('kkmtError').classList.add('hidden-custom');
         isKkmtDuplicate = false;
@@ -401,7 +397,7 @@
 
       } catch (err) {
         console.error("Gagal menyimpan:", err.message);
-        alert("Terjadi kesalahan saat menyimpan data: " + err.message);
+        tampilkanModal("Terjadi kesalahan saat menyimpan data: " + err.message, "error");
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Ternak';
