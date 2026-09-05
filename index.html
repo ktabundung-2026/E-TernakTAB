@@ -289,7 +289,7 @@
         // Sesuaikan nama kolom primary key/KKMT di tabel database Anda (contoh: 'nomor_kkmt' atau 'No')
         const { data, error } = await _supabase
           .from(TABLE_NAME)
-          .select('nomor_kkmt')
+          .select('No_KKMT')
           .eq('nomor_kkmt', kkmtInput);
 
         if (error) throw error;
