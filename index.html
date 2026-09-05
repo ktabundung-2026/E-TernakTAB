@@ -1,6 +1,6 @@
 <!-- 
   ====================================================================================
-  Nama Aplikasi  : Sistem E-Ternak Wilayah Kecamatan Tabundung (v.1.3 - Optimized)
+  Nama Aplikasi  : Sistem E-Ternak Wilayah Kecamatan Tabundung (v.1.3 - High Contrast)
   Deskripsi      : Web Aplikasi Mandiri (SPA) untuk Pendataan Ternak Keluar.
                    Dibangun menggunakan Tailwind CSS, Supabase Database, dan GitHub Pages.
   Fitur Utama    : 
@@ -8,7 +8,7 @@
     - Auto-fill NIK Pemilik Berdasarkan Nama Pemilik yang Telah Terdaftar
     - Ringkasan Statistik Populasi Ternak (Kerbau, Sapi, Kuda)
     - Upload Foto Cepat (Optimized Non-blocking Upload / Background Processing)
-    - Kustomisasi Tampilan Modal & Antarmuka Tema Orange Modern Responsif
+    - Tes Kontras Tinggi: Latar belakang bersih dengan teks gelap tebal & kontras optimal
   ====================================================================================
 -->
 <!DOCTYPE html>
@@ -27,20 +27,24 @@
   <style>
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      background: radial-gradient(circle at top right, #fff7ed, #f3f4f6);
+      /* Background lebih solid dan bersih agar teks sangat kontras dibaca */
+      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+      color: #111827;
     }
     .hidden-custom { display: none; }
     .glass-effect {
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(251, 146, 60, 0.3);
     }
-    .pulse-soft {
-      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    input, select {
+      color: #111827 !important;
+      font-weight: 600 !important;
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: .6; }
+    input::placeholder {
+      color: #9ca3af !important;
+      font-weight: 400 !important;
     }
   </style>
 </head>
@@ -51,67 +55,67 @@
     
     <!-- BRANDING HEADER -->
     <div class="text-center py-2">
-      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-orange-500 text-white text-2xl shadow-lg shadow-orange-200 mb-3">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-orange-600 text-white text-2xl shadow-lg shadow-orange-300 mb-3">
         <i class="fa-solid fa-cow"></i>
       </div>
       <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Sistem E-Ternak v.1.3</h1>
-      <p class="text-xs text-gray-500 font-medium mt-1">Manajemen Data Ternak Wilayah Kecamatan Tabundung</p>
+      <p class="text-xs text-gray-700 font-semibold mt-1">Manajemen Data Ternak Wilayah Kecamatan Tabundung</p>
       
-      <div class="inline-flex items-center gap-1.5 bg-gray-200/60 text-gray-700 text-[11px] font-semibold px-3 py-1 rounded-full mt-3 shadow-sm">
-        <i class="fa-solid fa-calendar-day text-orange-500"></i>
+      <div class="inline-flex items-center gap-1.5 bg-white text-gray-900 text-xs font-bold px-3 py-1.5 rounded-full mt-3 shadow-sm border border-orange-200">
+        <i class="fa-solid fa-calendar-day text-orange-600"></i>
         <span id="tanggalHariIni">Memuat tanggal...</span>
       </div>
     </div>
 
     <!-- STATISTIK CARD -->
-    <div class="glass-effect p-6 rounded-2xl shadow-xl border border-white/60 w-full transition-all duration-300">
-      <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-        <i class="fa-solid fa-chart-simple text-orange-500 text-base"></i> Ringkasan Populasi
+    <div class="glass-effect p-6 rounded-2xl shadow-xl w-full">
+      <h3 class="text-xs font-extrabold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-chart-simple text-orange-600 text-base"></i> Ringkasan Populasi
       </h3>
       
-      <div id="statsLoading" class="text-center py-6 text-gray-400 text-sm font-medium">
-        <i class="fa-solid fa-circle-notch fa-spin text-orange-500 text-lg mr-2"></i> Sinkronisasi database...
+      <div id="statsLoading" class="text-center py-6 text-gray-600 text-sm font-semibold">
+        <i class="fa-solid fa-circle-notch fa-spin text-orange-600 text-lg mr-2"></i> Sinkronisasi database...
       </div>
       
       <div id="statsGrid" class="hidden-custom space-y-4">
-        <div class="bg-gradient-to-br from-orange-500 to-amber-600 p-4 rounded-xl shadow-md shadow-orange-100 flex items-center justify-between text-white">
+        <div class="bg-gradient-to-br from-orange-600 to-amber-600 p-4 rounded-xl shadow-md flex items-center justify-between text-white">
           <div>
-            <p class="text-xs font-semibold text-orange-100 uppercase tracking-wide">Total Ternak Keluar</p>
-            <p class="text-3xl font-extrabold mt-1" id="statTotal">0</p>
+            <p class="text-xs font-bold text-orange-100 uppercase tracking-wide">Total Ternak Keluar</p>
+            <p class="text-3xl font-extrabold mt-1 text-white" id="statTotal">0</p>
           </div>
-          <div class="bg-white/10 w-12 h-12 rounded-lg flex items-center justify-center text-xl"><i class="fa-solid fa-layer-group"></i></div>
+          <div class="bg-white/20 w-12 h-12 rounded-lg flex items-center justify-center text-xl text-white"><i class="fa-solid fa-layer-group"></i></div>
         </div>
         
         <div class="grid grid-cols-3 gap-2.5">
-          <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
-            <span class="inline-block px-2 py-0.5 text-[10px] font-bold text-yellow-600 bg-yellow-50 rounded-full mb-1">Kerbau</span>
-            <p class="text-xl font-bold text-gray-800 mt-1" id="statKerbau">0</p>
+          <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm text-center">
+            <span class="inline-block px-2 py-0.5 text-[10px] font-extrabold text-amber-900 bg-amber-100 rounded-full mb-1">Kerbau</span>
+            <p class="text-xl font-extrabold text-gray-900 mt-1" id="statKerbau">0</p>
           </div>
-          <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
-            <span class="inline-block px-2 py-0.5 text-[10px] font-bold text-blue-600 bg-blue-50 rounded-full mb-1">Sapi</span>
-            <p class="text-xl font-bold text-gray-800 mt-1" id="statSapi">0</p>
+          <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm text-center">
+            <span class="inline-block px-2 py-0.5 text-[10px] font-extrabold text-blue-900 bg-blue-100 rounded-full mb-1">Sapi</span>
+            <p class="text-xl font-extrabold text-gray-900 mt-1" id="statSapi">0</p>
           </div>
-          <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-center">
-            <span class="inline-block px-2 py-0.5 text-[10px] font-bold text-red-600 bg-red-50 rounded-full mb-1">Kuda</span>
-            <p class="text-xl font-bold text-gray-800 mt-1" id="statKuda">0</p>
+          <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm text-center">
+            <span class="inline-block px-2 py-0.5 text-[10px] font-extrabold text-red-900 bg-red-100 rounded-full mb-1">Kuda</span>
+            <p class="text-xl font-extrabold text-gray-900 mt-1" id="statKuda">0</p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- LOGIN CARD -->
-    <div class="glass-effect p-6 rounded-2xl shadow-xl border border-white/60 w-full">
+    <div class="glass-effect p-6 rounded-2xl shadow-xl w-full">
       <div class="mb-5">
-        <label class="block text-gray-700 text-xs font-bold uppercase tracking-wider mb-2">Akses Keamanan</label>
+        <label class="block text-gray-900 text-xs font-extrabold uppercase tracking-wider mb-2">Akses Keamanan</label>
         <div class="relative flex items-center">
-          <i class="fa-solid fa-lock absolute left-3 text-gray-400 text-sm"></i>
-          <input type="password" id="appPassword" class="w-full bg-white/80 border border-gray-200 rounded-xl py-3 pl-9 pr-4 text-gray-800 text-sm leading-tight focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500 transition-all duration-200 shadow-inner" placeholder="Masukkan Password Kontrol">
+          <i class="fa-solid fa-lock absolute left-3 text-gray-600 text-sm"></i>
+          <input type="password" id="appPassword" class="w-full bg-white border-2 border-gray-300 rounded-xl py-3 pl-9 pr-4 text-gray-900 text-sm font-bold leading-tight focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition shadow-inner" placeholder="Masukkan Password Kontrol">
         </div>
       </div>
-      <p id="loginError" class="text-red-500 text-xs font-medium mb-4 flex items-center gap-1.5 hidden-custom">
-        <i class="fa-solid fa-circle-exclamation"></i> Password tidak sesuai!
+      <p id="loginError" class="text-red-700 text-xs font-bold mb-4 flex items-center gap-1.5 hidden-custom bg-red-50 p-2.5 rounded-lg border border-red-200">
+        <i class="fa-solid fa-circle-exclamation text-red-600"></i> Password tidak sesuai!
       </p>
-      <button onclick="loginAplikasi()" id="btnLogin" class="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-bold py-3 px-4 rounded-xl focus:outline-none shadow-lg shadow-gray-900/10 transition-all duration-200 active:scale-[0.98]">
+      <button onclick="loginAplikasi()" id="btnLogin" class="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-extrabold py-3 px-4 rounded-xl focus:outline-none shadow-lg transition active:scale-[0.98]">
         Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
       </button>
     </div>
@@ -119,14 +123,14 @@
   </div>
 
   <!-- SECTION 2: FORM INPUT -->
-  <div id="formSection" class="glass-effect p-6 md:p-8 rounded-2xl shadow-2xl border border-white/80 w-full max-w-2xl hidden-custom transition-all duration-300">
+  <div id="formSection" class="glass-effect p-6 md:p-8 rounded-2xl shadow-2xl w-full max-w-2xl hidden-custom transition-all duration-300">
     
-    <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
+    <div class="flex items-center justify-between border-b border-orange-200 pb-4 mb-6">
       <div>
         <h2 class="text-lg font-extrabold text-gray-900 tracking-tight">Formulir Identitas Ternak</h2>
-        <p class="text-xs text-gray-500 font-medium">Input Pendataan Ternak Keluar</p>
+        <p class="text-xs text-gray-700 font-semibold">Input Pendataan Ternak Keluar</p>
       </div>
-      <button onclick="logoutAplikasi()" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold py-1.5 px-3.5 rounded-xl text-xs transition duration-150 flex items-center gap-1">
+      <button onclick="logoutAplikasi()" class="bg-red-100 hover:bg-red-200 text-red-800 font-extrabold py-1.5 px-3.5 rounded-xl text-xs transition flex items-center gap-1 border border-red-300">
         <i class="fa-solid fa-right-from-bracket text-[10px]"></i> Kunci
       </button>
     </div>
@@ -136,56 +140,56 @@
         
         <!-- Nomor KKMT -->
         <div>
-          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Nomor KKMT</label>
-          <input type="text" id="nomorKkmt" required inputmode="numeric" oninput="verifikasiNomorKkmt()" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition shadow-inner">
-          <p id="kkmtError" class="text-red-500 text-[11px] font-semibold mt-1 hidden-custom">
-            <i class="fa-solid fa-triangle-exclamation"></i> Nomor KKMT ini sudah terdaftar!
+          <label class="block text-gray-900 text-xs font-extrabold uppercase tracking-wide mb-1.5">Nomor KKMT</label>
+          <input type="text" id="nomorKkmt" required inputmode="numeric" oninput="verifikasiNomorKkmt()" class="w-full bg-white border-2 border-gray-300 rounded-xl py-2.5 px-3.5 text-sm text-gray-900 font-bold focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition shadow-inner">
+          <p id="kkmtError" class="text-red-700 text-[11px] font-bold mt-1 hidden-custom bg-red-50 p-1.5 rounded border border-red-200">
+            <i class="fa-solid fa-triangle-exclamation text-red-600"></i> Nomor KKMT ini sudah terdaftar!
           </p>
         </div>
 
         <!-- Jenis Ternak -->
         <div>
-          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Jenis Ternak</label>
+          <label class="block text-gray-900 text-xs font-extrabold uppercase tracking-wide mb-1.5">Jenis Ternak</label>
           <div class="relative">
-            <select id="jenisTernak" required class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition shadow-inner appearance-none">
+            <select id="jenisTernak" required class="w-full bg-white border-2 border-gray-300 rounded-xl py-2.5 px-3.5 text-sm text-gray-900 font-bold focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition shadow-inner appearance-none">
               <option value="">-- Pilih Jenis Ternak --</option>
               <option value="Kerbau">Kerbau</option>
               <option value="Sapi">Sapi</option>
               <option value="Kuda">Kuda</option>
             </select>
-            <i class="fa-solid fa-chevron-down absolute right-3.5 top-3.5 text-gray-400 text-xs pointer-events-none"></i>
+            <i class="fa-solid fa-chevron-down absolute right-3.5 top-3.5 text-gray-700 text-xs pointer-events-none"></i>
           </div>
         </div>
 
         <!-- Jenis Kelamin -->
         <div>
-          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Jenis Kelamin Ternak</label>
+          <label class="block text-gray-900 text-xs font-extrabold uppercase tracking-wide mb-1.5">Jenis Kelamin Ternak</label>
           <div class="relative">
-            <select id="jenisKelamin" required class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition shadow-inner appearance-none">
+            <select id="jenisKelamin" required class="w-full bg-white border-2 border-gray-300 rounded-xl py-2.5 px-3.5 text-sm text-gray-900 font-bold focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition shadow-inner appearance-none">
               <option value="">-- Pilih Jenis Kelamin Ternak --</option>
               <option value="Jantan">Jantan</option>
               <option value="Betina">Betina</option>
             </select>
-            <i class="fa-solid fa-chevron-down absolute right-3.5 top-3.5 text-gray-400 text-xs pointer-events-none"></i>
+            <i class="fa-solid fa-chevron-down absolute right-3.5 top-3.5 text-gray-700 text-xs pointer-events-none"></i>
           </div>
         </div>
 
         <!-- Nama Pemilik -->
         <div>
-          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Nama Pemilik</label>
-          <input type="text" id="namaPemilik" required onblur="autoFillNik()" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition shadow-inner" placeholder="Masukkan nama pemilik...">
+          <label class="block text-gray-900 text-xs font-extrabold uppercase tracking-wide mb-1.5">Nama Pemilik</label>
+          <input type="text" id="namaPemilik" required onblur="autoFillNik()" class="w-full bg-white border-2 border-gray-300 rounded-xl py-2.5 px-3.5 text-sm text-gray-900 font-bold focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition shadow-inner" placeholder="Masukkan nama pemilik...">
         </div>
 
         <!-- NIK Pemilik -->
         <div>
-          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">NIK Pemilik</label>
-          <input type="text" id="nikPemilik" required inputmode="numeric" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition shadow-inner" placeholder="NIK akan terisi otomatis...">
+          <label class="block text-gray-900 text-xs font-extrabold uppercase tracking-wide mb-1.5">NIK Pemilik</label>
+          <input type="text" id="nikPemilik" required inputmode="numeric" class="w-full bg-white border-2 border-gray-300 rounded-xl py-2.5 px-3.5 text-sm text-gray-900 font-bold focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition shadow-inner" placeholder="NIK akan terisi otomatis...">
         </div>
 
         <!-- Asal Ternak -->
         <div>
-          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Asal Ternak</label>
-          <select id="asalTernak" required class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition shadow-inner">
+          <label class="block text-gray-900 text-xs font-extrabold uppercase tracking-wide mb-1.5">Asal Ternak</label>
+          <select id="asalTernak" required class="w-full bg-white border-2 border-gray-300 rounded-xl py-2.5 px-3.5 text-sm text-gray-900 font-bold focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition shadow-inner">
             <option value="">-- Asal Ternak --</option>
             <option value="Tarimbang">Tarimbang</option>
             <option value="Banggawatu">Banggawatu</option>
@@ -202,24 +206,24 @@
 
         <!-- Nama Pengantar KKMT -->
         <div class="md:col-span-2">
-          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Nama Pengantar KKMT</label>
-          <input type="text" id="namaPengantar" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 transition shadow-inner">
+          <label class="block text-gray-900 text-xs font-extrabold uppercase tracking-wide mb-1.5">Nama Pengantar KKMT</label>
+          <input type="text" id="namaPengantar" class="w-full bg-white border-2 border-gray-300 rounded-xl py-2.5 px-3.5 text-sm text-gray-900 font-bold focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 transition shadow-inner">
         </div>
 
         <!-- Upload Foto/Dokumen -->
         <div class="md:col-span-2 mt-2">
-          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-2">Upload Foto Ciri Ternak</label>
-          <div class="border-2 border-dashed border-gray-200 rounded-xl p-4 bg-white/50 text-center hover:bg-white transition-all">
-            <input type="file" id="fotoTernak" accept="image/jpeg, image/png, application/pdf" capture="environment" class="mx-auto block text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 file:cursor-pointer cursor-pointer">
-            <p class="text-[11px] text-gray-400 mt-2"><i class="fa-solid fa-camera mr-0.5"></i> Kamera HP otomatis aktif atau pilih format JPG, PNG, PDF</p>
+          <label class="block text-gray-900 text-xs font-extrabold uppercase tracking-wide mb-2">Upload Foto Ciri Ternak</label>
+          <div class="border-2 border-dashed border-orange-400 rounded-xl p-4 bg-white text-center hover:bg-orange-50/50 transition-all">
+            <input type="file" id="fotoTernak" accept="image/jpeg, image/png, application/pdf" capture="environment" class="mx-auto block text-xs text-gray-800 font-semibold file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-orange-600 file:text-white hover:file:bg-orange-700 file:cursor-pointer cursor-pointer">
+            <p class="text-xs text-gray-700 font-semibold mt-2"><i class="fa-solid fa-camera mr-1 text-orange-600"></i> Kamera HP otomatis aktif atau pilih format JPG, PNG, PDF</p>
           </div>
         </div>
 
       </div>
 
       <!-- Tombol Simpan -->
-      <div class="flex items-center justify-end mt-6 border-t border-gray-100 pt-4">
-        <button type="submit" id="btnSubmit" class="w-full md:w-auto bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold py-3 px-8 rounded-xl focus:outline-none shadow-lg shadow-orange-500/20 transition duration-200 active:scale-[0.98] flex items-center justify-center gap-2">
+      <div class="flex items-center justify-end mt-6 border-t border-orange-200 pt-4">
+        <button type="submit" id="btnSubmit" class="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white text-sm font-extrabold py-3 px-8 rounded-xl focus:outline-none shadow-lg shadow-orange-600/30 transition duration-200 active:scale-[0.98] flex items-center justify-center gap-2">
           <i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Ternak
         </button>
       </div>
@@ -227,14 +231,14 @@
   </div>
 
   <!-- CUSTOM MODAL POPUP -->
-  <div id="customModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden-custom">
-    <div class="glass-effect bg-white p-6 rounded-2xl shadow-2xl border border-gray-100 w-full max-w-sm text-center transform transition-all scale-95 duration-200" id="modalBox">
-      <div id="modalIcon" class="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xl mx-auto mb-3">
+  <div id="customModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 hidden-custom">
+    <div class="glass-effect bg-white p-6 rounded-2xl shadow-2xl border-2 border-orange-400 w-full max-w-sm text-center transform transition-all scale-95 duration-200" id="modalBox">
+      <div id="modalIcon" class="w-14 h-14 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-2xl mx-auto mb-3 border border-orange-300">
         <i class="fa-solid fa-check"></i>
       </div>
       <h3 id="modalTitle" class="text-base font-extrabold text-gray-900 uppercase tracking-wide">Status simpan data</h3>
-      <p id="modalMessage" class="text-xs text-gray-500 font-medium mt-1 mb-5">Data Ternak berhasil disimpan!</p>
-      <button onclick="tutupModal()" class="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-md transition active:scale-[0.98]">
+      <p id="modalMessage" class="text-xs text-gray-800 font-bold mt-1 mb-5">Data Ternak berhasil disimpan!</p>
+      <button onclick="tutupModal()" class="w-full bg-orange-600 hover:bg-orange-700 text-white text-xs font-extrabold py-3 px-4 rounded-xl shadow-md transition active:scale-[0.98]">
         OK
       </button>
     </div>
@@ -350,9 +354,9 @@
         if (data && data.length > 0 && data[0].NIK_Pemilik) {
           nikInput.value = data[0].NIK_Pemilik;
           
-          nikInput.classList.add('bg-orange-50', 'border-orange-300');
+          nikInput.classList.add('bg-orange-100', 'border-orange-600');
           setTimeout(() => {
-            nikInput.classList.remove('bg-orange-50', 'border-orange-300');
+            nikInput.classList.remove('bg-orange-100', 'border-orange-600');
           }, 1500);
         }
       } catch (err) {
@@ -432,11 +436,8 @@
         isKkmtDuplicate = false;
         loadStats();
 
-        // 2. Jika ada foto, proses upload dijalankan di latar belakang (background) 
-        // tanpa membuat user menunggu proses loading selesai.
+        // 2. Jika ada foto, proses upload dijalankan di latar belakang (background)
         if (file && insertedData && insertedData.length > 0) {
-          const recordId = insertedData[0].id || insertedData[0].No_KKMT; 
-          
           (async () => {
             try {
               const fileName = `${Date.now()}_${file.name}`;
@@ -449,7 +450,6 @@
                   .from('Folder_Foto')
                   .getPublicUrl(fileName);
                 
-                // Update link foto ke baris data yang sudah tersimpan sebelumnya
                 await _supabase
                   .from(TABLE_NAME)
                   .update({ Link_FotoKKMT: publicUrlData.publicUrl })
@@ -479,10 +479,10 @@
       modalMessage.innerText = pesan;
       
       if (tipe === 'sukses') {
-        modalIcon.className = "w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xl mx-auto mb-3";
+        modalIcon.className = "w-14 h-14 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-2xl mx-auto mb-3 border border-orange-300";
         modalIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
       } else {
-        modalIcon.className = "w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xl mx-auto mb-3";
+        modalIcon.className = "w-14 h-14 rounded-full bg-red-100 text-red-700 flex items-center justify-center text-2xl mx-auto mb-3 border border-red-300";
         modalIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
       }
 
