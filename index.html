@@ -1,13 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <base target="_top">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Google Fonts & Tailwind -->
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Supabase JS Library dari CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <style>
     body {
@@ -119,7 +121,7 @@
     <form id="ternakForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         
-        <!-- Nomor KKMT (dengan Pengecekan Duplikat) -->
+        <!-- Nomor KKMT -->
         <div>
           <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Nomor KKMT</label>
           <input type="text" id="nomorKkmt" required inputmode="numeric" pattern="[0-9]+" title="Hanya angka" onblur="verifikasiNomorKkmt()" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition shadow-inner">
@@ -155,10 +157,10 @@
           </div>
         </div>
 
-        <!-- Nama Pemilik (Mendukung Huruf & Tanda Baca) -->
+        <!-- Nama Pemilik -->
         <div>
           <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Nama Pemilik Ternak</label>
-          <input type="text" id="namaPemilik" required pattern="[A-Za-z\s.,'&quot;-]+" title="Huruf dan tanda baca (titik, koma, petik, strip)" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition shadow-inner">
+          <input type="text" id="namaPemilik" required pattern="[A-Za-z\s.,'&quot;-]+" title="Huruf dan tanda baca" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition shadow-inner">
         </div>
 
         <!-- NIK Pemilik -->
@@ -185,10 +187,10 @@
           </select>    
         </div>
 
-        <!-- Nama Pengantar KKMT (Mendukung Huruf & Tanda Baca) -->
+        <!-- Nama Pengantar KKMT -->
         <div class="md:col-span-2">
           <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Nama Pengantar KKMT</label>
-          <input type="text" id="namaPengantar" required pattern="[A-Za-z\s.,'&quot;-]+" title="Huruf dan tanda baca (titik, koma, petik, strip)" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition shadow-inner">
+          <input type="text" id="namaPengantar" required pattern="[A-Za-z\s.,'&quot;-]+" title="Huruf dan tanda baca" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition shadow-inner">
         </div>
 
         <!-- Upload Foto/Dokumen -->
@@ -211,8 +213,18 @@
     </form>
   </div>
 
-  <!-- JAVASCRIPT LOGIC -->
+  <!-- JAVASCRIPT LOGIC SUPABASE & GITHUB -->
   <script>
+    // Konfigurasi Supabase
+    const SUPABASE_URL = "https://tdmcatsgixnvgkmxuzqt.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkbWNhdHNnaXhudmdrbXh1enF0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODQ0NTczMywiZXhwIjoyMTA0MDIxNzMzfQ.dRjs7LzSZN2jdMwSzwAzldYgLrshH45ayisSKCX-b9Y";
+    const TABLE_NAME = "database_ternak_tab";
+    const PASSWORD_ADMIN = "admin123"; // Sesuaikan password kontrol Anda di sini
+
+    // Inisialisasi Supabase Client
+    const { createClient } = supabase;
+    const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
     let isKkmtDuplicate = false;
 
     window.onload = function() { 
@@ -226,25 +238,41 @@
       document.getElementById('tanggalHariIni').innerText = tanggal;
     }
 
-    function loadStats() {
+    // Fungsi Mengambil Statistik dari Supabase
+    async function loadStats() {
       document.getElementById('statsLoading').classList.remove('hidden-custom');
       document.getElementById('statsGrid').classList.add('hidden-custom');
-      google.script.run
-        .withSuccessHandler(function(stats) {
-          if (stats) {
-            document.getElementById('statTotal').innerText = stats.total || 0;
-            document.getElementById('statKerbau').innerText = stats.kerbau || 0;
-            document.getElementById('statSapi').innerText = stats.sapi || 0;
-            document.getElementById('statKuda').innerText = stats.kuda || 0;
-            document.getElementById('statsLoading').classList.add('hidden-custom');
-            document.getElementById('statsGrid').classList.remove('hidden-custom');
-          }
-        })
-        .getLivestockStats();
+
+      try {
+        const { data, error } = await _supabase.from(TABLE_NAME).select('jenis_ternak');
+        
+        if (error) throw error;
+
+        let total = data.length;
+        let kerbau = 0, sapi = 0, kuda = 0;
+
+        data.forEach(item => {
+          let jenis = (item.jenis_ternak || "").toLowerCase();
+          if (jenis.includes('kerbau')) kerbau++;
+          else if (jenis.includes('sapi')) sapi++;
+          else if (jenis.includes('kuda')) kuda++;
+        });
+
+        document.getElementById('statTotal').innerText = total;
+        document.getElementById('statKerbau').innerText = kerbau;
+        document.getElementById('statSapi').innerText = sapi;
+        document.getElementById('statKuda').innerText = kuda;
+
+        document.getElementById('statsLoading').classList.add('hidden-custom');
+        document.getElementById('statsGrid').classList.remove('hidden-custom');
+      } catch (err) {
+        console.error("Gagal memuat statistik:", err.message);
+        document.getElementById('statsLoading').innerText = "Gagal memuat data statistik.";
+      }
     }
 
-    // Fungsi Verifikasi Duplikat KKMT saat input kehilangan fokus (onblur)
-    function verifikasiNomorKkmt() {
+    // Fungsi Verifikasi Duplikat KKMT
+    async function verifikasiNomorKkmt() {
       const kkmtInput = document.getElementById('nomorKkmt').value.trim();
       const errEl = document.getElementById('kkmtError');
       
@@ -254,39 +282,46 @@
         return;
       }
 
-      google.script.run
-        .withSuccessHandler(function(isExist) {
-          if (isExist) {
-            errEl.classList.remove('hidden-custom');
-            isKkmtDuplicate = true;
-          } else {
-            errEl.classList.add('hidden-custom');
-            isKkmtDuplicate = false;
-          }
-        })
-        .cekKkmtAda(kkmtInput);
+      try {
+        // Sesuaikan nama kolom primary key/KKMT di tabel database Anda (contoh: 'nomor_kkmt' atau 'No')
+        const { data, error } = await _supabase
+          .from(TABLE_NAME)
+          .select('nomor_kkmt')
+          .eq('nomor_kkmt', kkmtInput);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          errEl.classList.remove('hidden-custom');
+          isKkmtDuplicate = true;
+        } else {
+          errEl.classList.add('hidden-custom');
+          isKkmtDuplicate = false;
+        }
+      } catch (err) {
+        console.error("Gagal mengecek KKMT:", err.message);
+      }
     }
 
     function loginAplikasi() {
       const password = document.getElementById('appPassword').value;
       const btn = document.getElementById('btnLogin');
       const errEl = document.getElementById('loginError');
+      
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Memverifikasi...';
       errEl.classList.add('hidden-custom');
 
-      google.script.run
-        .withSuccessHandler(function(isValid) {
-          if(isValid) {
-            document.getElementById('loginSection').classList.add('hidden-custom');
-            document.getElementById('formSection').classList.remove('hidden-custom');
-          } else {
-            errEl.classList.remove('hidden-custom');
-            btn.disabled = false;
-            btn.innerHTML = 'Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>';
-          }
-        })
-        .periksaPassword(password);
+      setTimeout(() => {
+        if (password === PASSWORD_ADMIN) {
+          document.getElementById('loginSection').classList.add('hidden-custom');
+          document.getElementById('formSection').classList.remove('hidden-custom');
+        } else {
+          errEl.classList.remove('hidden-custom');
+          btn.disabled = false;
+          btn.innerHTML = 'Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>';
+        }
+      }, 500);
     }
 
     function logoutAplikasi() {
@@ -299,7 +334,8 @@
       loadStats();
     }
 
-    function handleFormSubmit(event) {
+    // Submit Data Form ke Supabase
+    async function handleFormSubmit(event) {
       event.preventDefault();
       
       if (isKkmtDuplicate) {
@@ -313,43 +349,54 @@
 
       const fileInput = document.getElementById('fotoTernak');
       const file = fileInput.files[0];
-      const formData = {
-        nomorKkmt: document.getElementById('nomorKkmt').value,
-        jenisTernak: document.getElementById('jenisTernak').value,
-        jenisKelamin: document.getElementById('jenisKelamin').value,
-        namaPemilik: document.getElementById('namaPemilik').value,
-        nikPemilik: document.getElementById('nikPemilik').value,
-        asalTernak: document.getElementById('asalTernak').value,
-        namaPengantar: document.getElementById('namaPengantar').value
+      
+      // Kumpulkan data form (pastikan nama key objek di bawah ini sama persis dengan nama kolom di tabel Supabase Anda)
+      const payload = {
+        nomor_kkmt: document.getElementById('nomorKkmt').value,
+        jenis_ternak: document.getElementById('jenisTernak').value,
+        jenis_kelamin: document.getElementById('jenisKelamin').value,
+        nama_pemilik: document.getElementById('namaPemilik').value,
+        nik_pemilik: document.getElementById('nikPemilik').value,
+        asal_ternak: document.getElementById('asalTernak').value,
+        nama_pengantar: document.getElementById('namaPengantar').value
       };
 
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const fileData = { base64: e.target.result, type: file.type };
-          kirimKeAppsScript(formData, fileData);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        kirimKeAppsScript(formData, null);
-      }
-    }
+      try {
+        // Jika ada file foto yang di-upload (opsional, jika Anda pakai Supabase Storage)
+        if (file) {
+          const fileName = `${Date.now()}_${file.name}`;
+          const { data: uploadData, error: uploadError } = await _supabase.storage
+            .from('bucket_ternak') // Ganti dengan nama Bucket Storage di Supabase Anda jika menggunakan fitur foto
+            .upload(fileName, file);
 
-    function kirimKeAppsScript(formData, fileData) {
-      google.script.run
-        .withSuccessHandler(function(response) {
-          alert(response.message);
-          if(response.status === "SUKSES") {
-            document.getElementById('ternakForm').reset();
-            document.getElementById('kkmtError').classList.add('hidden-custom');
-            isKkmtDuplicate = false;
-            loadStats();
+          if (!uploadError && uploadData) {
+            const { data: publicUrlData } = _supabase.storage
+              .from('bucket_ternak')
+              .getPublicUrl(fileName);
+            payload.foto_url = publicUrlData.publicUrl;
           }
-          const btn = document.getElementById('btnSubmit');
-          btn.disabled = false;
-          btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Ternak';
-        })
-        .simpanDataTernak(formData, fileData);
+        }
+
+        // Insert data ke tabel database Supabase
+        const { error: insertError } = await _supabase
+          .from(TABLE_NAME)
+          .insert([payload]);
+
+        if (insertError) throw insertError;
+
+        alert("Data Ternak berhasil disimpan!");
+        document.getElementById('ternakForm').reset();
+        document.getElementById('kkmtError').classList.add('hidden-custom');
+        isKkmtDuplicate = false;
+        loadStats();
+
+      } catch (err) {
+        console.error("Gagal menyimpan:", err.message);
+        alert("Terjadi kesalahan saat menyimpan data: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Ternak';
+      }
     }
   </script>
 </body>
