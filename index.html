@@ -252,7 +252,7 @@
         let kerbau = 0, sapi = 0, kuda = 0;
 
         data.forEach(item => {
-          let jenis = (item.jenis_ternak || "").toLowerCase();
+          let jenis = (item.Jenis_Ternak || "").toLowerCase();
           if (jenis.includes('Kerbau')) Kerbau++;
           else if (jenis.includes('Sapi')) Sapi++;
           else if (jenis.includes('Kuda')) Kuda++;
