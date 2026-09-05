@@ -248,15 +248,18 @@
         
         if (error) throw error;
 
-        let total = data.length;
-        let Kerbau = 0, Sapi = 0, Kuda = 0;
+        let total = data ? data.length : 0;
+        let kerbau = 0, sapi = 0, kuda = 0;
 
-        data.forEach(item => {
-          let jenis = (item.Jenis_Ternak || "").toLowerCase();
-          if (jenis =='Kerbau') kerbau++;
-          else if (jenis == 'Sapi') sapi++;
-          else if (jenis =='Kuda') kuda++;
-        });
+        if (data) {
+          data.forEach(item => {
+            // Cocokkan langsung dengan data asli di Supabase
+            let jenis = item.Jenis_Ternak || "";
+            if (jenis === 'Kerbau') kerbau++;
+            else if (jenis === 'Sapi') sapi++;
+            else if (jenis === 'Kuda') kuda++;
+          });
+        }
 
         document.getElementById('statTotal').innerText = total;
         document.getElementById('statKerbau').innerText = kerbau;
