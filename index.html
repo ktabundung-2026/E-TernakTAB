@@ -253,9 +253,9 @@
 
         data.forEach(item => {
           let jenis = (item.jenis_ternak || "").toLowerCase();
-          if (jenis.includes('kerbau')) kerbau++;
-          else if (jenis.includes('sapi')) sapi++;
-          else if (jenis.includes('kuda')) kuda++;
+          if (jenis.includes('Kerbau')) kerbau++;
+          else if (jenis.includes('Sapi')) sapi++;
+          else if (jenis.includes('Kuda')) kuda++;
         });
 
         document.getElementById('statTotal').innerText = total;
