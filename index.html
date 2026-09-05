@@ -164,9 +164,10 @@
         </div>
 
         <!-- NIK Pemilik -->
+        <!-- Nama Pemilik -->
         <div>
-          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">NIK Pemilik Ternak</label>
-          <input type="text" id="nikPemilik" required inputmode="numeric" pattern="[0-9]+" title="Hanya angka" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition shadow-inner">
+          <label class="block text-gray-700 text-xs font-bold uppercase tracking-wide mb-1.5">Nama Pemilik</label>
+          <input type="text" id="namaPemilik" required onblur="autoFillNik()" class="w-full bg-white/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition shadow-inner" placeholder="Masukkan nama pemilik...">
         </div>
 
         <!-- Asal Ternak -->
@@ -337,7 +338,39 @@
       btn.innerHTML = 'Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>';
       loadStats();
     }
+  // Fungsi untuk mengisi NIK secara otomatis jika Nama Pemilik sudah pernah terdaftar
+    async function autoFillNik() {
+      const namaInput = document.getElementById('namaPemilik').value.trim();
+      const nikInput = document.getElementById('nikPemilik');
+      
+      // Jika kolom nama kosong, jangan lakukan apa-apa
+      if (!namaInput) return;
 
+      try {
+        // Cari data di Supabase berdasarkan Nama Pemilik
+        // Menggunakan .ilike agar pencarian tidak terlalu sensitif terhadap huruf besar/kecil
+        const { data, error } = await _supabase
+          .from(TABLE_NAME)
+          .select('NIK_Pemilik')
+          .ilike('Nama_Pemilik', namaInput)
+          .limit(1);
+
+        if (error) throw error;
+
+        // Jika data ditemukan dan NIK tersedia, masukkan secara otomatis ke input NIK
+        if (data && data.length > 0 && data[0].NIK_Pemilik) {
+          nikInput.value = data[0].NIK_Pemilik;
+          
+          // Opsional: Berikan sedikit efek visual bahwa NIK terisi otomatis
+          nikInput.classList.add('bg-green-50', 'border-green-300');
+          setTimeout(() => {
+            nikInput.classList.remove('bg-green-50', 'border-green-300');
+          }, 1500);
+        }
+      } catch (err) {
+        console.error("Gagal menarik NIK otomatis:", err.message);
+      }
+    }
     // Submit Data Form ke Supabase dengan Custom Modal
     async function handleFormSubmit(event) {
       event.preventDefault();
