@@ -407,6 +407,47 @@
         btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Ternak';
       }
     }
+    // Fungsi untuk menampilkan custom popup pengganti alert()
+    function tampilkanModal(pesan, tipe = 'sukses') {
+      const modal = document.getElementById('customModal');
+      const modalBox = document.getElementById('modalBox');
+      const modalIcon = document.getElementById('modalIcon');
+      const modalMessage = document.getElementById('modalMessage');
+      
+      modalMessage.innerText = pesan;
+      
+      if (tipe === 'sukses') {
+        modalIcon.className = "w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xl mx-auto mb-3";
+        modalIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+      } else {
+        modalIcon.className = "w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xl mx-auto mb-3";
+        modalIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+      }
+
+      modal.classList.remove('hidden-custom');
+      setTimeout(() => {
+        modalBox.classList.remove('scale-95');
+        modalBox.classList.add('scale-100');
+      }, 10);
+    }
+
+    function tutupModal() {
+      const modal = document.getElementById('customModal');
+      modal.classList.add('hidden-custom');
+    }
   </script>
+  <!-- CUSTOM MODAL POPUP -->
+<div id="customModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden-custom">
+  <div class="glass-effect bg-white p-6 rounded-2xl shadow-2xl border border-gray-100 w-full max-w-sm text-center transform transition-all scale-95 duration-200" id="modalBox">
+    <div id="modalIcon" class="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xl mx-auto mb-3">
+      <i class="fa-solid fa-check"></i>
+    </div>
+    <h3 id="modalTitle" class="text-base font-extrabold text-gray-900 uppercase tracking-wide">Status simpan data</h3>
+    <p id="modalMessage" class="text-xs text-gray-500 font-medium mt-1 mb-5">Data Ternak berhasil disimpan!</p>
+    <button onclick="tutupModal()" class="w-full bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-md transition active:scale-[0.98]">
+      OK
+    </button>
+  </div>
+</div>
 </body>
 </html>
