@@ -354,7 +354,7 @@
       const fileInput = document.getElementById('fotoTernak');
       const file = fileInput.files[0];
       
-      // Mengambil nilai berdasarkan ID elemen HTML yang benar (huruf kecil di awal)
+      // Kumpulkan data sesuai nama kolom persis di database Anda
       const payload = {
         No_KKMT: document.getElementById('nomorKkmt').value,
         Jenis_Ternak: document.getElementById('jenisTernak').value,
@@ -366,11 +366,10 @@
       };
 
       try {
-        // Jika ada file foto yang di-upload
+        // Jika ada file foto/dokumen yang di-upload
         if (file) {
           const fileName = `${Date.now()}_${file.name}`;
           
-          // Gunakan nama bucket 'Folder_Foto' secara konsisten
           const { data: uploadData, error: uploadError } = await _supabase.storage
             .from('Folder_Foto')
             .upload(fileName, file);
@@ -382,7 +381,8 @@
               .from('Folder_Foto')
               .getPublicUrl(fileName);
               
-            payload.foto_url = publicUrlData.publicUrl;
+            // Masukkan link foto ke kolom Link_FotoKKMT sesuai database
+            payload.Link_FotoKKMT = publicUrlData.publicUrl;
           }
         }
 
