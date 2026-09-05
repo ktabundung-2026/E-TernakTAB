@@ -354,29 +354,34 @@
       const fileInput = document.getElementById('fotoTernak');
       const file = fileInput.files[0];
       
-      // Kumpulkan data form (pastikan nama key objek di bawah ini sama persis dengan nama kolom di tabel Supabase Anda)
+      // Mengambil nilai berdasarkan ID elemen HTML yang benar (huruf kecil di awal)
       const payload = {
-        No_KKMT: document.getElementById('No_KKMT').value,
-        Jenis_Ternak: document.getElementById('Jenis_Ternak').value,
-        Jenis_Kelamin: document.getElementById('Jenis_Kelamin').value,
-        Nama_Pemilik: document.getElementById('Nama_Pemilik').value,
-        NIK_Pemilik: document.getElementById('NIK_Pemilik').value,
-        Asal_Ternak: document.getElementById('Asal_Ternak').value,
-        Nama_Pengantar: document.getElementById('Nama_Pengantar').value
+        No_KKMT: document.getElementById('nomorKkmt').value,
+        Jenis_Ternak: document.getElementById('jenisTernak').value,
+        Jenis_Kelamin: document.getElementById('jenisKelamin').value,
+        Nama_Pemilik: document.getElementById('namaPemilik').value,
+        NIK_Pemilik: document.getElementById('nikPemilik').value,
+        Asal_Ternak: document.getElementById('asalTernak').value,
+        Nama_Pengantar: document.getElementById('namaPengantar').value
       };
 
       try {
-        // Jika ada file foto yang di-upload (opsional, jika Anda pakai Supabase Storage)
+        // Jika ada file foto yang di-upload
         if (file) {
           const fileName = `${Date.now()}_${file.name}`;
+          
+          // Gunakan nama bucket 'Folder_Foto' secara konsisten
           const { data: uploadData, error: uploadError } = await _supabase.storage
-            .from('Folder_Foto') // Ganti dengan nama Bucket Storage di Supabase Anda jika menggunakan fitur foto
+            .from('Folder_Foto')
             .upload(fileName, file);
 
-          if (!uploadError && uploadData) {
+          if (uploadError) throw uploadError;
+
+          if (uploadData) {
             const { data: publicUrlData } = _supabase.storage
-              .from('bucket_ternak')
+              .from('Folder_Foto')
               .getPublicUrl(fileName);
+              
             payload.foto_url = publicUrlData.publicUrl;
           }
         }
