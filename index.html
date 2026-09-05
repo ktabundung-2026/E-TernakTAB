@@ -219,7 +219,7 @@
     const SUPABASE_URL = "https://tdmcatsgixnvgkmxuzqt.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkbWNhdHNnaXhudmdrbXh1enF0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODQ0NTczMywiZXhwIjoyMTA0MDIxNzMzfQ.dRjs7LzSZN2jdMwSzwAzldYgLrshH45ayisSKCX-b9Y";
     const TABLE_NAME = "database_ternak_tab";
-    const PASSWORD_ADMIN = "admin123"; // Sesuaikan password kontrol Anda di sini
+    const PASSWORD_ADMIN = "admin1234"; // Sesuaikan password kontrol Anda di sini
 
     // Inisialisasi Supabase Client
     const { createClient } = supabase;
@@ -290,7 +290,7 @@
         const { data, error } = await _supabase
           .from(TABLE_NAME)
           .select('No_KKMT')
-          .eq('nomor_kkmt', kkmtInput);
+          .eq('No_KKMT', kkmtInput);
 
         if (error) throw error;
 
