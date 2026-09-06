@@ -1,15 +1,17 @@
-
 <!-- 
   ====================================================================================
   Nama Aplikasi  : Sistem E-Ternak Wilayah Kecamatan Tabundung (v.1.3 - Orange Theme)
   Deskripsi      : Web Aplikasi Mandiri (SPA) untuk Pendataan Ternak Keluar.
-                   Dibangun menggunakan Tailwind CSS, Supabase Database, dan GitHub Pages.
+                   Dibangun menggunakan Tailwind CSS, Database Supabase, Google Apps Script 
+                   (GAS) Proxy untuk keamanan API Key, dan di-hosting melalui GitHub Pages.
+  
   Fitur Utama    : 
-    - Manajemen & Validasi Real-time Nomor KKMT (Cek Duplikat)
-    - Auto-fill NIK Pemilik Berdasarkan Nama Pemilik yang Telah Terdaftar
-    - Ringkasan Statistik Populasi Ternak (Kerbau, Sapi, Kuda)
-    - Upload Foto Cepat (Optimized Non-blocking Upload / Background Processing)
-    - Tema Orange Solid (#bf8924) pada Logo, Tombol Utama, dan Total Card
+    - Manajemen & Validasi Real-time Nomor KKMT (Pencegahan Data Duplikat)
+    - Fitur Auto-fill NIK Pemilik Berdasarkan Nama yang Terdaftar di Database
+    - Ringkasan Statistik Populasi Ternak secara Live (Kerbau, Sapi, Kuda)
+    - Sistem Keamanan Akses Formulir dengan Password Kontrol Admin
+    - Arsitektur Backend Proxy via GAS untuk Menyembunyikan Kunci API Rahasia
+    - Tema Orange Solid (#bf8924) yang Konsisten pada Logo, Tombol, dan Kartu Statistik
   ====================================================================================
 -->
 <!DOCTYPE html>
@@ -21,9 +23,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  
-  <!-- Supabase JS Library dari CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <style>
     body {
@@ -55,7 +54,6 @@
     
     <!-- BRANDING HEADER -->
     <div class="text-center py-2">
-      <!-- Logo Sapi dengan background #bf8924 (Sama dengan Total Ternak Keluar) -->
       <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl text-white text-3xl shadow-lg mb-3" style="background-color: #bf8924;">
         <i class="fa-solid fa-cow"></i>
       </div>
@@ -79,7 +77,6 @@
       </div>
       
       <div id="statsGrid" class="hidden-custom space-y-4">
-        <!-- Total Ternak Keluar Background #bf8924 -->
         <div class="p-4 rounded-xl shadow-md flex items-center justify-between" style="background-color: #bf8924;">
           <div>
             <p class="text-xs font-extrabold text-amber-900 uppercase tracking-wide">Total Ternak Keluar</p>
@@ -88,7 +85,6 @@
           <div class="bg-white/20 w-12 h-12 rounded-lg flex items-center justify-center text-xl text-white"><i class="fa-solid fa-layer-group"></i></div>
         </div>
         
-        <!-- Tulisan Kerbau, Sapi, Kuda -->
         <div class="grid grid-cols-3 gap-2.5">
           <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm text-center">
             <span class="block text-xs font-extrabold text-amber-800 mb-1">Kerbau</span>
@@ -119,7 +115,6 @@
         <i class="fa-solid fa-circle-exclamation text-red-600"></i> Password tidak sesuai!
       </p>
       
-      <!-- Tombol Buka Form Input dengan background #bf8924 -->
       <button onclick="loginAplikasi()" id="btnLogin" class="w-full text-white text-sm font-extrabold py-3 px-4 rounded-xl focus:outline-none shadow-lg hover:opacity-90 transition active:scale-[0.98]" style="background-color: #bf8924;">
         Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
       </button>
@@ -206,7 +201,7 @@
             <option value="Wudipandak">Wudipandak</option>
             <option value="Praing Kareha">Praing Kareha</option>
             <option value="Pindu Hurani">Pindu Hurani</option>
-          </select>    
+          </select>   
         </div>
 
         <!-- Nama Pengantar KKMT -->
@@ -228,7 +223,6 @@
 
       <!-- Tombol Simpan -->
       <div class="flex items-center justify-end mt-6 border-t border-orange-200 pt-4">
-        <!-- Tombol Simpan Data Ternak dengan background #bf8924 -->
         <button type="submit" id="btnSubmit" class="w-full md:w-auto text-white text-sm font-extrabold py-3 px-8 rounded-xl focus:outline-none shadow-lg hover:opacity-90 transition duration-200 active:scale-[0.98] flex items-center justify-center gap-2" style="background-color: #bf8924;">
           <i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Ternak
         </button>
@@ -250,23 +244,16 @@
     </div>
   </div>
 
-  <!-- JAVASCRIPT LOGIC SUPABASE & GITHUB -->
+  <!-- JAVASCRIPT LOGIC VIA GAS PROXY -->
   <script>
-    // Konfigurasi Supabase
-    const SUPABASE_URL = "https://tdmcatsgixnvgkmxuzqt.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkbWNhdHNnaXhudmdrbXh1enF0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODQ0NTczMywiZXhwIjoyMTA0MDIxNzMzfQ.dRjs7LzSZN2jdMwSzwAzldYgLrshH45ayisSKCX-b9Y";
-    const TABLE_NAME = "database_ternak_tab";
-    const PASSWORD_ADMIN = "admin1234";
-
-    // Inisialisasi Supabase Client
-    const { createClient } = supabase;
-    const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
+    // URL Web App Google Apps Script Anda
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxFSTWm18pkOHsOx4VkzsPUPaz1TOTyb2Z-NMC2rNuc0--LdRvfujICVDyyiWP0bmV3zA/exec";
+    
     let isKkmtDuplicate = false;
 
-    window.onload = function() { 
+    window.onload = function() {  
       tampilkanTanggalTerkini();
-      loadStats(); 
+      loadStats();  
     };
 
     function tampilkanTanggalTerkini() {
@@ -275,16 +262,81 @@
       document.getElementById('tanggalHariIni').innerText = tanggal;
     }
 
-    // Fungsi Mengambil Statistik dari Supabase
+    // Helper universal untuk komunikasi dengan Google Apps Script Proxy
+    async function callGasBackend(action, extraData = {}) {
+      try {
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: action, ...extraData })
+        });
+        const json = await response.json();
+        if (!json.success) throw new Error(json.error || "Terjadi kesalahan di server");
+        return json.data;
+      } catch (err) {
+        console.error(`Gagal pada action [${action}]:`, err.message);
+        throw err;
+      }
+    }
+  
+    // Fungsi Login Aplikasi untuk masuk ke Form Input Data Ternak
+    async function loginAplikasi() {
+      const password = document.getElementById('appPassword').value;
+      const btn = document.getElementById('btnLogin');
+      const errEl = document.getElementById('loginError');
+      
+      if (!password) {
+        errEl.innerText = "Password tidak boleh kosong!";
+        errEl.classList.remove('hidden-custom');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Memverifikasi...';
+      errEl.classList.add('hidden-custom');
+
+      try {
+        // Meminta server GAS untuk mengecek kecocokan password secara aman
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'verifyLogin', password: password })
+        });
+        const json = await response.json();
+
+        if (json.success && json.valid) {
+          // Jika password benar
+          document.getElementById('loginSection').classList.add('hidden-custom');
+          document.getElementById('formSection').classList.remove('hidden-custom');
+        } else {
+          // Jika password salah
+          errEl.innerText = "Password tidak sesuai!";
+          errEl.classList.remove('hidden-custom');
+        }
+      } catch (err) {
+        console.error("Gagal verifikasi login:", err.message);
+        errEl.innerText = "Terjadi kesalahan koneksi server.";
+        errEl.classList.remove('hidden-custom');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>';
+      }
+    }
+
+    function logoutAplikasi() {
+      document.getElementById('appPassword').value = "";
+      document.getElementById('loginSection').classList.remove('hidden-custom');
+      document.getElementById('formSection').classList.add('hidden-custom');
+      const btn = document.getElementById('btnLogin');
+      btn.disabled = false;
+      btn.innerHTML = 'Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>';
+      loadStats();
+    }
+    // 1. Memuat Statistik dari GAS
     async function loadStats() {
       document.getElementById('statsLoading').classList.remove('hidden-custom');
       document.getElementById('statsGrid').classList.add('hidden-custom');
 
       try {
-        const { data, error } = await _supabase.from(TABLE_NAME).select('Jenis_Ternak');
-        
-        if (error) throw error;
-
+        const data = await callGasBackend('getStats');
         let total = data ? data.length : 0;
         let kerbau = 0, sapi = 0, kuda = 0;
 
@@ -310,7 +362,7 @@
       }
     }
 
-    // Fungsi Verifikasi Duplikat KKMT secara Real-time
+    // 2. Verifikasi Duplikat KKMT secara Real-time via GAS
     async function verifikasiNomorKkmt() {
       const kkmtInput = document.getElementById('nomorKkmt').value.trim();
       const errEl = document.getElementById('kkmtError');
@@ -322,13 +374,7 @@
       }
 
       try {
-        const { data, error } = await _supabase
-          .from(TABLE_NAME)
-          .select('No_KKMT')
-          .eq('No_KKMT', kkmtInput);
-
-        if (error) throw error;
-
+        const data = await callGasBackend('checkKkmt', { no_kkmt: kkmtInput });
         if (data && data.length > 0) {
           errEl.classList.remove('hidden-custom');
           isKkmtDuplicate = true;
@@ -341,7 +387,7 @@
       }
     }
 
-    // Fungsi untuk mengisi NIK secara otomatis berdasarkan Nama Pemilik
+    // 3. Auto-fill NIK Berdasarkan Nama Pemilik via GAS
     async function autoFillNik() {
       const namaInput = document.getElementById('namaPemilik').value.trim();
       const nikInput = document.getElementById('nikPemilik');
@@ -349,17 +395,9 @@
       if (!namaInput) return;
 
       try {
-        const { data, error } = await _supabase
-          .from(TABLE_NAME)
-          .select('NIK_Pemilik')
-          .ilike('Nama_Pemilik', namaInput)
-          .limit(1);
-
-        if (error) throw error;
-
+        const data = await callGasBackend('autoFillNik', { nama_pemilik: namaInput });
         if (data && data.length > 0 && data[0].NIK_Pemilik) {
           nikInput.value = data[0].NIK_Pemilik;
-          
           nikInput.classList.add('bg-orange-100', 'border-amber-500');
           setTimeout(() => {
             nikInput.classList.remove('bg-orange-100', 'border-amber-500');
@@ -370,38 +408,7 @@
       }
     }
 
-    function loginAplikasi() {
-      const password = document.getElementById('appPassword').value;
-      const btn = document.getElementById('btnLogin');
-      const errEl = document.getElementById('loginError');
-      
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Memverifikasi...';
-      errEl.classList.add('hidden-custom');
-
-      setTimeout(() => {
-        if (password === PASSWORD_ADMIN) {
-          document.getElementById('loginSection').classList.add('hidden-custom');
-          document.getElementById('formSection').classList.remove('hidden-custom');
-        } else {
-          errEl.classList.remove('hidden-custom');
-          btn.disabled = false;
-          btn.innerHTML = 'Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>';
-        }
-      }, 500);
-    }
-
-    function logoutAplikasi() {
-      document.getElementById('appPassword').value = "";
-      document.getElementById('loginSection').classList.remove('hidden-custom');
-      document.getElementById('formSection').classList.add('hidden-custom');
-      const btn = document.getElementById('btnLogin');
-      btn.disabled = false;
-      btn.innerHTML = 'Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>';
-      loadStats();
-    }
-
-    // Submit Data Form ke Supabase dengan Optimized Non-blocking Upload
+    // 4. Submit Data Form via GAS Proxy
     async function handleFormSubmit(event) {
       event.preventDefault();
       
@@ -412,11 +419,8 @@
 
       const btn = document.getElementById('btnSubmit');
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Menyimpan Cepat...';
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Menyimpan Data...';
 
-      const fileInput = document.getElementById('fotoTernak');
-      const file = fileInput.files[0];
-      
       const payload = {
         No_KKMT: document.getElementById('nomorKkmt').value,
         Jenis_Ternak: document.getElementById('jenisTernak').value,
@@ -428,45 +432,12 @@
       };
 
       try {
-        // 1. Simpan data teks ke database terlebih dahulu
-        const { data: insertedData, error: insertError } = await _supabase
-          .from(TABLE_NAME)
-          .insert([payload])
-          .select();
-
-        if (insertError) throw insertError;
-
-        tampilkanModal("Data Ternak berhasil disimpan dengan cepat!", "sukses");
+        await callGasBackend('insertData', { payload });
+        tampilkanModal("Data Ternak berhasil disimpan!", "sukses");
         document.getElementById('ternakForm').reset();
         document.getElementById('kkmtError').classList.add('hidden-custom');
         isKkmtDuplicate = false;
         loadStats();
-
-        // 2. Upload foto di latar belakang (background processing)
-        if (file && insertedData && insertedData.length > 0) {
-          (async () => {
-            try {
-              const fileName = `${Date.now()}_${file.name}`;
-              const { data: uploadData, error: uploadError } = await _supabase.storage
-                .from('Folder_Foto')
-                .upload(fileName, file);
-
-              if (!uploadError && uploadData) {
-                const { data: publicUrlData } = _supabase.storage
-                  .from('Folder_Foto')
-                  .getPublicUrl(fileName);
-                
-                await _supabase
-                  .from(TABLE_NAME)
-                  .update({ Link_FotoKKMT: publicUrlData.publicUrl })
-                  .eq('No_KKMT', payload.No_KKMT);
-              }
-            } catch (bgErr) {
-              console.error("Gagal upload foto latar belakang:", bgErr.message);
-            }
-          })();
-        }
-
       } catch (err) {
         console.error("Gagal menyimpan:", err.message);
         tampilkanModal("Terjadi kesalahan saat menyimpan data: " + err.message, "error");
