@@ -4,14 +4,6 @@
   Deskripsi      : Web Aplikasi Mandiri (SPA) untuk Pendataan Ternak Keluar.
                    Dibangun menggunakan Tailwind CSS, Database Supabase, Google Apps Script 
                    (GAS) Proxy untuk keamanan API Key, dan di-hosting melalui GitHub Pages.
-  
-  Fitur Utama    : 
-    - Manajemen & Validasi Real-time Nomor KKMT (Pencegahan Data Duplikat)
-    - Fitur Auto-fill NIK Pemilik Berdasarkan Nama yang Terdaftar di Database
-    - Ringkasan Statistik Populasi Ternak secara Live (Kerbau, Sapi, Kuda)
-    - Sistem Keamanan Akses Formulir dengan Password Kontrol Admin
-    - Arsitektur Backend Proxy via GAS untuk Menyembunyikan Kunci API Rahasia
-    - Tema Orange Solid (#bf8924) yang Konsisten pada Logo, Tombol, dan Kartu Statistik
   ====================================================================================
 -->
 <!DOCTYPE html>
@@ -244,11 +236,9 @@
     </div>
   </div>
 
-  <!-- JAVASCRIPT LOGIC VIA GAS PROXY -->
+  <!-- JAVASCRIPT LOGIC -->
   <script>
-    // URL Web App Google Apps Script Anda
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxFSTWm18pkOHsOx4VkzsPUPaz1TOTyb2Z-NMC2rNuc0--LdRvfujICVDyyiWP0bmV3zA/exec";
-    
     let isKkmtDuplicate = false;
 
     window.onload = function() {  
@@ -258,11 +248,9 @@
 
     function tampilkanTanggalTerkini() {
       const opsi = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      const tanggal = new Date().toLocaleDateString('id-ID', opsi);
-      document.getElementById('tanggalHariIni').innerText = tanggal;
+      document.getElementById('tanggalHariIni').innerText = new Date().toLocaleDateString('id-ID', opsi);
     }
 
-    // Helper universal untuk komunikasi dengan Google Apps Script Proxy
     async function callGasBackend(action, extraData = {}) {
       try {
         const response = await fetch(GAS_URL, {
@@ -278,7 +266,6 @@
       }
     }
   
-    // Fungsi Login Aplikasi untuk masuk ke Form Input Data Ternak
     async function loginAplikasi() {
       const password = document.getElementById('appPassword').value;
       const btn = document.getElementById('btnLogin');
@@ -295,7 +282,6 @@
       errEl.classList.add('hidden-custom');
 
       try {
-        // Meminta server GAS untuk mengecek kecocokan password secara aman
         const response = await fetch(GAS_URL, {
           method: 'POST',
           body: JSON.stringify({ action: 'verifyLogin', password: password })
@@ -303,11 +289,9 @@
         const json = await response.json();
 
         if (json.success && json.valid) {
-          // Jika password benar
           document.getElementById('loginSection').classList.add('hidden-custom');
           document.getElementById('formSection').classList.remove('hidden-custom');
         } else {
-          // Jika password salah
           errEl.innerText = "Password tidak sesuai!";
           errEl.classList.remove('hidden-custom');
         }
@@ -330,7 +314,7 @@
       btn.innerHTML = 'Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>';
       loadStats();
     }
-    // 1. Memuat Statistik dari GAS
+
     async function loadStats() {
       document.getElementById('statsLoading').classList.remove('hidden-custom');
       document.getElementById('statsGrid').classList.add('hidden-custom');
@@ -362,7 +346,6 @@
       }
     }
 
-    // 2. Verifikasi Duplikat KKMT secara Real-time via GAS
     async function verifikasiNomorKkmt() {
       const kkmtInput = document.getElementById('nomorKkmt').value.trim();
       const errEl = document.getElementById('kkmtError');
@@ -387,7 +370,6 @@
       }
     }
 
-    // 3. Auto-fill NIK Berdasarkan Nama Pemilik via GAS
     async function autoFillNik() {
       const namaInput = document.getElementById('namaPemilik').value.trim();
       const nikInput = document.getElementById('nikPemilik');
@@ -408,7 +390,15 @@
       }
     }
 
-    // 4. Submit Data Form via GAS Proxy
+    function getFileBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
+    }
+
     async function handleFormSubmit(event) {
       event.preventDefault();
       
@@ -419,21 +409,35 @@
 
       const btn = document.getElementById('btnSubmit');
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Menyimpan Data...';
-
-      const payload = {
-        No_KKMT: document.getElementById('nomorKkmt').value,
-        Jenis_Ternak: document.getElementById('jenisTernak').value,
-        Jenis_Kelamin: document.getElementById('jenisKelamin').value,
-        Nama_Pemilik: document.getElementById('namaPemilik').value,
-        NIK_Pemilik: document.getElementById('nikPemilik').value,
-        Asal_Ternak: document.getElementById('asalTernak').value,
-        Nama_Pengantar: document.getElementById('namaPengantar').value
-      };
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Mengunggah Foto & Menyimpan Data...';
 
       try {
+        const fileInput = document.getElementById('fotoTernak');
+        let filePayload = null;
+        
+        if (fileInput.files && fileInput.files[0]) {
+          const file = fileInput.files[0];
+          const base64String = await getFileBase64(file);
+          filePayload = {
+            name: file.name,
+            type: file.type,
+            data: base64String.split(',')[1]
+          };
+        }
+
+        const payload = {
+          No_KKMT: document.getElementById('nomorKkmt').value,
+          Jenis_Ternak: document.getElementById('jenisTernak').value,
+          Jenis_Kelamin: document.getElementById('jenisKelamin').value,
+          Nama_Pemilik: document.getElementById('namaPemilik').value,
+          NIK_Pemilik: document.getElementById('nikPemilik').value,
+          Asal_Ternak: document.getElementById('asalTernak').value,
+          Nama_Pengantar: document.getElementById('namaPengantar').value,
+          filePayload: filePayload
+        };
+
         await callGasBackend('insertData', { payload });
-        tampilkanModal("Data Ternak berhasil disimpan!", "sukses");
+        tampilkanModal("Data Ternak & Foto berhasil disimpan!", "sukses");
         document.getElementById('ternakForm').reset();
         document.getElementById('kkmtError').classList.add('hidden-custom');
         isKkmtDuplicate = false;
