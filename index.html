@@ -1,8 +1,8 @@
 <!-- 
   ====================================================================================
-  Nama Aplikasi  : Sistem E-Ternak Wilayah Kecamatan Tabundung (v.1.6 - Fast Frontend)
+  Nama Aplikasi  : Sistem E-Ternak Wilayah Kecamatan Tabundung (v.1.7 - Fast Frontend)
   Deskripsi      : Web Aplikasi Mandiri (SPA) untuk Pendataan Ternak Keluar.
-                   Dioptimalkan dengan Direct Supabase Read & GAS Proxy for Storage/Auth.
+                   Dioptimalkan dengan Direct Supabase Storage & Read/Write Pipeline.
   ====================================================================================
 -->
 <!DOCTYPE html>
@@ -49,7 +49,7 @@
       <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl text-white text-3xl shadow-lg mb-3" style="background-color: #bf8924;">
         <i class="fa-solid fa-cow"></i>
       </div>
-      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Sistem E-Ternak v.1.6</h1>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Sistem E-Ternak v.1.7</h1>
       <p class="text-xs text-gray-700 font-semibold mt-1">Manajemen Data Ternak Wilayah Kecamatan Tabundung</p>
       
       <div class="inline-flex items-center gap-1.5 bg-white text-gray-900 text-xs font-bold px-3 py-1.5 rounded-full mt-3 shadow-sm border border-gray-200">
@@ -236,14 +236,15 @@
     </div>
   </div>
 
-  <!-- JAVASCRIPT LOGIC (DIRECT SUPABASE READ + GAS WRITE) -->
+  <!-- JAVASCRIPT LOGIC (DIRECT SUPABASE READ/STORAGE & GAS WRITE) -->
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxFSTWm18pkOHsOx4VkzsPUPaz1TOTyb2Z-NMC2rNuc0--LdRvfujICVDyyiWP0bmV3zA/exec";
     
-    // Konfigurasi Supabase untuk Direct Read (Sangat Cepat)
+    // Konfigurasi Supabase
     const SUPABASE_URL = "https://tdmcatsgixnvgkmxuzqt.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkbWNhdHNnaXhudmdrbXh1enF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NDU3MzMsImV4cCI6MjEwNDAyMTczM30.0Ijm8f4iu7uiUAhd1597vc9ptTponxW5U2CRfjCjbZE"; 
     const TABLE_NAME = "database_ternak_tab";
+    const SUPABASE_STORAGE_BUCKET = "Folder_Foto";
     
     let isKkmtDuplicate = false;
 
@@ -257,7 +258,7 @@
       document.getElementById('tanggalHariIni').innerText = new Date().toLocaleDateString('id-ID', opsi);
     }
 
-    // Fungsi Load Statistik langsung ke Supabase API (Tanpa GAS)
+    // Fungsi Load Statistik langsung ke Supabase API
     async function loadStats() {
       document.getElementById('statsLoading').classList.remove('hidden-custom');
       document.getElementById('statsGrid').classList.add('hidden-custom');
@@ -347,7 +348,7 @@
       loadStats();
     }
 
-    // Cek duplikasi KKMT langsung ke Supabase API (Tanpa GAS)
+    // Cek duplikasi KKMT langsung ke Supabase API
     async function verifikasiNomorKkmt() {
       const kkmtInput = document.getElementById('nomorKkmt').value.trim();
       const errEl = document.getElementById('kkmtError');
@@ -380,7 +381,7 @@
       }
     }
 
-    // Auto-fill NIK langsung ke Supabase API (Tanpa GAS)
+    // Auto-fill NIK langsung ke Supabase API
     async function autoFillNik() {
       const namaInput = document.getElementById('namaPemilik').value.trim();
       const nikInput = document.getElementById('nikPemilik');
@@ -409,16 +410,7 @@
       }
     }
 
-    function getFileBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-      });
-    }
-
-    // Simpan Data & Upload Foto melalui GAS Proxy
+    // Simpan Data & Upload Foto Cepat (Direct Storage + GAS Insert)
     async function handleFormSubmit(event) {
       event.preventDefault();
       
@@ -433,18 +425,42 @@
 
       try {
         const fileInput = document.getElementById('fotoTernak');
-        let filePayload = null;
+        let relativePath = null;
         
+        // 1. UPLOAD FOTO LANGSUNG KE SUPABASE STORAGE (Super Cepat)
         if (fileInput.files && fileInput.files[0]) {
           const file = fileInput.files[0];
-          const base64String = await getFileBase64(file);
-          filePayload = {
-            name: file.name,
-            type: file.type,
-            data: base64String.split(',')[1]
-          };
+          const cleanNoKkmt = document.getElementById('nomorKkmt').value.trim().replace(/[\/\\#,+()$~%.'":*?<>{}\s]/g, "_");
+          
+          let ext = ".jpg";
+          const parts = file.name.split('.');
+          if (parts.length > 1) {
+            ext = "." + parts.pop().toLowerCase();
+          }
+          
+          const fileName = "KKMT_" + cleanNoKkmt + "_" + new Date().getTime() + ext;
+          const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${SUPABASE_STORAGE_BUCKET}/${encodeURIComponent(fileName)}`;
+
+          const uploadResponse = await fetch(uploadUrl, {
+            method: "POST",
+            headers: {
+              "apikey": SUPABASE_ANON_KEY,
+              "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+              "Content-Type": file.type || 'image/jpeg',
+              "x-upsert": "true"
+            },
+            body: file // Mengirim file mentah secara biner
+          });
+
+          if (!uploadResponse.ok) {
+            const errText = await uploadResponse.text();
+            throw new Error("Gagal mengunggah foto ke storage: " + errText);
+          }
+
+          relativePath = fileName;
         }
 
+        // 2. KIRIM DATA TEKS KE GAS PROXY
         const payload = {
           No_KKMT: document.getElementById('nomorKkmt').value,
           Jenis_Ternak: document.getElementById('jenisTernak').value,
@@ -453,7 +469,7 @@
           NIK_Pemilik: document.getElementById('nikPemilik').value,
           Asal_Ternak: document.getElementById('asalTernak').value,
           Nama_Pengantar: document.getElementById('namaPengantar').value,
-          filePayload: filePayload
+          Link_FotoKKMT: relativePath
         };
 
         const response = await fetch(GAS_URL, {
