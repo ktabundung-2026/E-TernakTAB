@@ -1,8 +1,8 @@
 <!-- 
   ====================================================================================
-  Nama Aplikasi  : Sistem E-Ternak Wilayah Kecamatan Tabundung (v.1.7 - Fast Frontend)
-  Deskripsi      : Web Aplikasi Mandiri (SPA) untuk Pendataan Ternak Keluar.
-                   Dioptimalkan dengan Direct Supabase Storage & Read/Write Pipeline.
+  Nama Aplikasi  : Sistem E-Ternak Wilayah Kecamatan Tabundung (v.1.7 - Pure Jamstack)
+  Hosting        : GitHub Pages (Murni Single Page Application / SPA)
+  Backend / DB   : Supabase REST API & Supabase Storage
   ====================================================================================
 -->
 <!DOCTYPE html>
@@ -11,7 +11,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>E-TernakTAB</title>
-  <!-- Google Fonts & Tailwind -->
+  <!-- Google Fonts, Tailwind CSS & FontAwesome CDN -->
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -65,7 +65,7 @@
       </h3>
       
       <div id="statsLoading" class="text-center py-6 text-gray-600 text-sm font-semibold">
-        <i class="fa-solid fa-circle-notch fa-spin text-orange-500 text-lg mr-2"></i> Sinkronisasi database...
+        <i class="fa-solid fa-circle-notch fa-spin text-orange-500 text-lg mr-2"></i> Memuat database...
       </div>
       
       <div id="statsGrid" class="hidden-custom space-y-4">
@@ -100,11 +100,11 @@
         <label class="block text-gray-900 text-xs font-extrabold uppercase tracking-wider mb-2">Akses Keamanan</label>
         <div class="relative flex items-center">
           <i class="fa-solid fa-lock absolute left-3 text-gray-600 text-sm"></i>
-          <input type="password" id="appPassword" class="w-full bg-white border-2 border-gray-300 rounded-xl py-3 pl-9 pr-4 text-gray-900 text-sm font-bold leading-tight focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-amber-600 transition shadow-inner" placeholder="Masukkan Password Kontrol">
+          <input type="password" id="appPassword" onkeyup="if(event.key==='Enter') loginAplikasi()" class="w-full bg-white border-2 border-gray-300 rounded-xl py-3 pl-9 pr-4 text-gray-900 text-sm font-bold leading-tight focus:outline-none focus:ring-2 focus:ring-amber-600 focus:border-amber-600 transition shadow-inner" placeholder="Masukkan Password Kontrol">
         </div>
       </div>
       <p id="loginError" class="text-red-700 text-xs font-bold mb-4 flex items-center gap-1.5 hidden-custom bg-red-50 p-2.5 rounded-lg border border-red-200">
-        <i class="fa-solid fa-circle-exclamation text-red-600"></i> Password tidak sesuai!
+        <i class="fa-solid fa-circle-exclamation text-red-600"></i> <span id="loginErrorText">Password tidak sesuai!</span>
       </p>
       
       <button onclick="loginAplikasi()" id="btnLogin" class="w-full text-white text-sm font-extrabold py-3 px-4 rounded-xl focus:outline-none shadow-lg hover:opacity-90 transition active:scale-[0.98]" style="background-color: #bf8924;">
@@ -236,16 +236,17 @@
     </div>
   </div>
 
-  <!-- JAVASCRIPT LOGIC (DIRECT SUPABASE READ/STORAGE & GAS WRITE) -->
+  <!-- JAVASCRIPT ENGINE (DIRECT SUPABASE REST & STORAGE) -->
   <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxFSTWm18pkOHsOx4VkzsPUPaz1TOTyb2Z-NMC2rNuc0--LdRvfujICVDyyiWP0bmV3zA/exec";
-    
-    // Konfigurasi Supabase
+    // Konfigurasi Kredensial Supabase
     const SUPABASE_URL = "https://tdmcatsgixnvgkmxuzqt.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkbWNhdHNnaXhudmdrbXh1enF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0NDU3MzMsImV4cCI6MjEwNDAyMTczM30.0Ijm8f4iu7uiUAhd1597vc9ptTponxW5U2CRfjCjbZE"; 
     const TABLE_NAME = "database_ternak_tab";
     const SUPABASE_STORAGE_BUCKET = "Folder_Foto";
     
+    // Password Kontrol Kontinjensi (Bisa diubah sesuai keinginan)
+    const PASSWORD_KONTROL_APP = "tabundung2026";
+
     let isKkmtDuplicate = false;
 
     window.onload = function() {  
@@ -258,7 +259,7 @@
       document.getElementById('tanggalHariIni').innerText = new Date().toLocaleDateString('id-ID', opsi);
     }
 
-    // Fungsi Load Statistik langsung ke Supabase API (diperbaiki menggunakan Range 0-2000 agar data 485+ terbaca penuh)
+    // Load Ringkasan Populasi Langsung dari Supabase
     async function loadStats() {
       document.getElementById('statsLoading').classList.remove('hidden-custom');
       document.getElementById('statsGrid').classList.add('hidden-custom');
@@ -272,6 +273,9 @@
             "Range": "0-2000"
           }
         });
+
+        if (!response.ok) throw new Error("Gagal mengambil data dari Supabase.");
+
         const data = await response.json();
         
         let total = Array.isArray(data) ? data.length : 0;
@@ -297,45 +301,27 @@
         console.error("Gagal memuat statistik:", err.message);
         document.getElementById('statsLoading').innerText = "Gagal memuat data statistik.";
       }
-    }
-  
-    // Verifikasi Login melalui GAS
-    async function loginAplikasi() {
-      const password = document.getElementById('appPassword').value;
-      const btn = document.getElementById('btnLogin');
+    }  
+
+    // Verifikasi Password Kontrol
+    function loginAplikasi() {
+      const passwordInput = document.getElementById('appPassword').value.trim();
       const errEl = document.getElementById('loginError');
+      const errText = document.getElementById('loginErrorText');
       
-      if (!password) {
-        errEl.innerText = "Password tidak boleh kosong!";
+      if (!passwordInput) {
+        errText.innerText = "Password tidak boleh kosong!";
         errEl.classList.remove('hidden-custom');
         return;
       }
 
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Memverifikasi...';
-      errEl.classList.add('hidden-custom');
-
-      try {
-        const response = await fetch(GAS_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'verifyLogin', password: password })
-        });
-        const json = await response.json();
-
-        if (json.success && json.valid) {
-          document.getElementById('loginSection').classList.add('hidden-custom');
-          document.getElementById('formSection').classList.remove('hidden-custom');
-        } else {
-          errEl.innerText = "Password tidak sesuai!";
-          errEl.classList.remove('hidden-custom');
-        }
-      } catch (err) {
-        console.error("Gagal verifikasi login:", err.message);
-        errEl.innerText = "Terjadi kesalahan koneksi server.";
+      if (passwordInput === PASSWORD_KONTROL_APP) {
+        document.getElementById('loginSection').classList.add('hidden-custom');
+        document.getElementById('formSection').classList.remove('hidden-custom');
+        errEl.classList.add('hidden-custom');
+      } else {
+        errText.innerText = "Password tidak sesuai!";
         errEl.classList.remove('hidden-custom');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = 'Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>';
       }
     }
 
@@ -343,13 +329,10 @@
       document.getElementById('appPassword').value = "";
       document.getElementById('loginSection').classList.remove('hidden-custom');
       document.getElementById('formSection').classList.add('hidden-custom');
-      const btn = document.getElementById('btnLogin');
-      btn.disabled = false;
-      btn.innerHTML = 'Buka Form Input <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>';
       loadStats();
     }
 
-    // Cek duplikasi KKMT langsung ke Supabase API
+    // Cek Duplikasi Nomor KKMT via Supabase REST API
     async function verifikasiNomorKkmt() {
       const kkmtInput = document.getElementById('nomorKkmt').value.trim();
       const errEl = document.getElementById('kkmtError');
@@ -382,7 +365,7 @@
       }
     }
 
-    // Auto-fill NIK langsung ke Supabase API
+    // Auto-fill NIK Pemilik Berdasarkan Nama
     async function autoFillNik() {
       const namaInput = document.getElementById('namaPemilik').value.trim();
       const nikInput = document.getElementById('nikPemilik');
@@ -411,12 +394,12 @@
       }
     }
 
-    // Simpan Data & Upload Foto Cepat (Direct Storage + GAS Insert)
+    // Submit Handler: Upload Foto ke Storage & Insert Data Teks ke REST API
     async function handleFormSubmit(event) {
       event.preventDefault();
       
       if (isKkmtDuplicate) {
-        tampilkanModal("Nomor KKMT sudah pernah terdaftar! Silakan gunakan Nomor KKMT yang lain.", "error");
+        tampilkanModal("Nomor KKMT sudah pernah terdaftar! Silakan gunakan Nomor KKMT lain.", "error");
         return;
       }
 
@@ -428,11 +411,10 @@
         const fileInput = document.getElementById('fotoTernak');
         let relativePath = null;
         
-        // 1. UPLOAD FOTO LANGSUNG KE SUPABASE STORAGE (Super Cepat & Bebas Error RLS 403)
+        // 1. Upload Foto Langsung ke Supabase Storage Bucket
         if (fileInput.files && fileInput.files[0]) {
           const file = fileInput.files[0];
           
-          // Format No_KKMT 6 Digit Presisi
           const rawKkmt = document.getElementById('nomorKkmt').value.trim().replace(/\D/g, "");
           const cleanNoKkmt = rawKkmt.padStart(6, '0');
           
@@ -442,7 +424,6 @@
             ext = "." + parts.pop().toLowerCase();
           }
           
-          // Nama file standar: KKMT_[6 digit No_KKMT]_[timestamp].jpg
           const fileName = "KKMT_" + cleanNoKkmt + "_" + new Date().getTime() + ext;
           const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${SUPABASE_STORAGE_BUCKET}/${encodeURIComponent(fileName)}`;
 
@@ -452,38 +433,45 @@
               "apikey": SUPABASE_ANON_KEY,
               "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
               "Content-Type": file.type || 'image/jpeg'
-              // Note: Header x-upsert dilepas agar tidak memicu AccessDenied 403
             },
             body: file
           });
 
           if (!uploadResponse.ok) {
             const errText = await uploadResponse.text();
-            throw new Error("Gagal mengunggah foto ke storage: " + errText);
+            throw new Error("Gagal mengunggah foto ke Supabase Storage: " + errText);
           }
 
           relativePath = fileName;
         }
 
-        // 2. KIRIM DATA TEKS KE GAS PROXY
+        // 2. Insert Record ke Supabase Table
         const payload = {
-          No_KKMT: document.getElementById('nomorKkmt').value,
+          No_KKMT: document.getElementById('nomorKkmt').value.trim(),
           Jenis_Ternak: document.getElementById('jenisTernak').value,
           Jenis_Kelamin: document.getElementById('jenisKelamin').value,
-          Nama_Pemilik: document.getElementById('namaPemilik').value,
-          NIK_Pemilik: document.getElementById('nikPemilik').value,
+          Nama_Pemilik: document.getElementById('namaPemilik').value.trim(),
+          NIK_Pemilik: document.getElementById('nikPemilik').value.trim(),
           Asal_Ternak: document.getElementById('asalTernak').value,
-          Nama_Pengantar: document.getElementById('namaPengantar').value,
+          Nama_Pengantar: document.getElementById('namaPengantar').value.trim(),
           Link_FotoKKMT: relativePath
         };
 
-        const response = await fetch(GAS_URL, {
+        const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}`, {
           method: 'POST',
-          body: JSON.stringify({ action: 'insertData', payload: payload })
+          headers: {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal"
+          },
+          body: JSON.stringify(payload)
         });
-        const json = await response.json();
 
-        if (!json.success) throw new Error(json.error || "Gagal menyimpan ke server");
+        if (!insertResponse.ok) {
+          const errDetail = await insertResponse.text();
+          throw new Error("Gagal menyimpan record ke Supabase Database: " + errDetail);
+        }
 
         tampilkanModal("Data Ternak & Foto berhasil disimpan!", "sukses");
         document.getElementById('ternakForm').reset();
