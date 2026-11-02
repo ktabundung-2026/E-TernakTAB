@@ -411,88 +411,93 @@
     }
 
     // Simpan Data & Upload Foto Cepat (Direct Storage + GAS Insert)
-    async function handleFormSubmit(event) {
-      event.preventDefault();
+    // Simpan Data & Upload Foto (Perbaikan AccessDenied 403 & Formatisasi 6 Digit No_KKMT)
+async function handleFormSubmit(event) {
+  event.preventDefault();
+  
+  if (isKkmtDuplicate) {
+    tampilkanModal("Nomor KKMT sudah pernah terdaftar! Silakan gunakan Nomor KKMT yang lain.", "error");
+    return;
+  }
+
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Mengunggah Foto & Menyimpan Data...';
+
+  try {
+    const fileInput = document.getElementById('fotoTernak');
+    let relativePath = null;
+    
+    // 1. UPLOAD FOTO KE SUPABASE STORAGE
+    if (fileInput.files && fileInput.files[0]) {
+      const file = fileInput.files[0];
       
-      if (isKkmtDuplicate) {
-        tampilkanModal("Nomor KKMT sudah pernah terdaftar! Silakan gunakan Nomor KKMT yang lain.", "error");
-        return;
+      // Ambil nilai KKMT, bersihkan karakter non-angka, dan format menjadi 6 DIGIT PRESISI
+      const rawKkmt = document.getElementById('nomorKkmt').value.trim().replace(/\D/g, "");
+      const cleanNoKkmt = rawKkmt.padStart(6, '0');
+      
+      let ext = ".jpg";
+      const parts = file.name.split('.');
+      if (parts.length > 1) {
+        ext = "." + parts.pop().toLowerCase();
+      }
+      
+      // Format Nama File Standar: KKMT_[6 digit No_KKMT]_[timestamp].jpg
+      const fileName = "KKMT_" + cleanNoKkmt + "_" + new Date().getTime() + ext;
+      const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${SUPABASE_STORAGE_BUCKET}/${encodeURIComponent(fileName)}`;
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": file.type || 'image/jpeg'
+          // Catatan: Header "x-upsert" sengaja dilepas agar tidak memerlukan RLS UPDATE yang memicu 403
+        },
+        body: file 
+      });
+
+      if (!uploadResponse.ok) {
+        const errText = await uploadResponse.text();
+        throw new Error("Gagal mengunggah foto ke storage: " + errText);
       }
 
-      const btn = document.getElementById('btnSubmit');
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Mengunggah Foto & Menyimpan Data...';
-
-      try {
-        const fileInput = document.getElementById('fotoTernak');
-        let relativePath = null;
-        
-        // 1. UPLOAD FOTO LANGSUNG KE SUPABASE STORAGE (Super Cepat)
-        if (fileInput.files && fileInput.files[0]) {
-          const file = fileInput.files[0];
-          const cleanNoKkmt = document.getElementById('nomorKkmt').value.trim().replace(/[\/\\#,+()$~%.'":*?<>{}\s]/g, "_");
-          
-          let ext = ".jpg";
-          const parts = file.name.split('.');
-          if (parts.length > 1) {
-            ext = "." + parts.pop().toLowerCase();
-          }
-          
-          const fileName = "KKMT_" + cleanNoKkmt + "_" + new Date().getTime() + ext;
-          const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${SUPABASE_STORAGE_BUCKET}/${encodeURIComponent(fileName)}`;
-
-          const uploadResponse = await fetch(uploadUrl, {
-            method: "POST",
-            headers: {
-              "apikey": SUPABASE_ANON_KEY,
-              "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-              "Content-Type": file.type || 'image/jpeg',
-              "x-upsert": "true"
-            },
-            body: file // Mengirim file mentah secara biner
-          });
-
-          if (!uploadResponse.ok) {
-            const errText = await uploadResponse.text();
-            throw new Error("Gagal mengunggah foto ke storage: " + errText);
-          }
-
-          relativePath = fileName;
-        }
-
-        // 2. KIRIM DATA TEKS KE GAS PROXY
-        const payload = {
-          No_KKMT: document.getElementById('nomorKkmt').value,
-          Jenis_Ternak: document.getElementById('jenisTernak').value,
-          Jenis_Kelamin: document.getElementById('jenisKelamin').value,
-          Nama_Pemilik: document.getElementById('namaPemilik').value,
-          NIK_Pemilik: document.getElementById('nikPemilik').value,
-          Asal_Ternak: document.getElementById('asalTernak').value,
-          Nama_Pengantar: document.getElementById('namaPengantar').value,
-          Link_FotoKKMT: relativePath
-        };
-
-        const response = await fetch(GAS_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'insertData', payload: payload })
-        });
-        const json = await response.json();
-
-        if (!json.success) throw new Error(json.error || "Gagal menyimpan ke server");
-
-        tampilkanModal("Data Ternak & Foto berhasil disimpan!", "sukses");
-        document.getElementById('ternakForm').reset();
-        document.getElementById('kkmtError').classList.add('hidden-custom');
-        isKkmtDuplicate = false;
-        loadStats();
-      } catch (err) {
-        console.error("Gagal menyimpan:", err.message);
-        tampilkanModal("Terjadi kesalahan saat menyimpan data: " + err.message, "error");
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Ternak';
-      }
+      relativePath = fileName;
     }
+
+    // 2. KIRIM DATA TEKS KE SERVER
+    const payload = {
+      No_KKMT: document.getElementById('nomorKkmt').value,
+      Jenis_Ternak: document.getElementById('jenisTernak').value,
+      Jenis_Kelamin: document.getElementById('jenisKelamin').value,
+      Nama_Pemilik: document.getElementById('namaPemilik').value,
+      NIK_Pemilik: document.getElementById('nikPemilik').value,
+      Asal_Ternak: document.getElementById('asalTernak').value,
+      Nama_Pengantar: document.getElementById('namaPengantar').value,
+      Link_FotoKKMT: relativePath
+    };
+
+    const response = await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'insertData', payload: payload })
+    });
+    const json = await response.json();
+
+    if (!json.success) throw new Error(json.error || "Gagal menyimpan ke server");
+
+    tampilkanModal("Data Ternak & Foto berhasil disimpan!", "sukses");
+    document.getElementById('ternakForm').reset();
+    document.getElementById('kkmtError').classList.add('hidden-custom');
+    isKkmtDuplicate = false;
+    loadStats();
+  } catch (err) {
+    console.error("Gagal menyimpan:", err.message);
+    tampilkanModal("Terjadi kesalahan saat menyimpan data: " + err.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Simpan Data Ternak';
+  }
+}
 
     function tampilkanModal(pesan, tipe = 'sukses') {
       const modal = document.getElementById('customModal');
